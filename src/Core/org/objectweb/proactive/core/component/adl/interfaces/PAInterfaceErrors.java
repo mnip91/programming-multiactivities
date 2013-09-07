@@ -34,17 +34,49 @@
  * ################################################################
  * $$PROACTIVE_INITIAL_DEV$$
  */
-package functionalTests.component.interceptor;
+package org.objectweb.proactive.core.component.adl.interfaces;
 
-import org.objectweb.proactive.core.component.interception.OutputInterceptor;
+import static org.objectweb.fractal.adl.error.ErrorTemplateValidator.validErrorTemplate;
 
-import functionalTests.component.controller.DummyController;
+import org.objectweb.fractal.adl.error.ErrorTemplate;
+import org.objectweb.fractal.adl.interfaces.InterfaceErrors;
 
 
-public interface OutputInterceptor1 extends OutputInterceptor, DummyController {
-    public static final String OUTPUT_INTERCEPTOR_1_NAME = "output-interceptor-1";
-    public static final String AFTER_INTERCEPTION = " - after-interception-" + OUTPUT_INTERCEPTOR_1_NAME +
-        " - ";
-    public static final String BEFORE_INTERCEPTION = " - before-interception-" + OUTPUT_INTERCEPTOR_1_NAME +
-        " - ";
+/**
+ * {@link ErrorTemplate} group for the interfaces package.
+ * 
+ * @author The ProActive Team
+ */
+public enum PAInterfaceErrors implements ErrorTemplate {
+    WRONG_INTERCEPTOR_NAME("Wrong interceptor name \"%s\" for interface \"%s\"", "interfaceName",
+            "interceptorName");
+
+    /** The groupId of ErrorTemplates defined in this enumeration. */
+    public static final String GROUP_ID = InterfaceErrors.GROUP_ID;
+
+    private int id;
+    private String format;
+
+    private PAInterfaceErrors(final String format, final Object... args) {
+        this.id = ordinal();
+        this.format = format;
+
+        assert validErrorTemplate(this, args);
+    }
+
+    public int getErrorId() {
+        return id;
+    }
+
+    public String getGroupId() {
+        return GROUP_ID;
+    }
+
+    public String getFormatedMessage(final Object... args) {
+        return String.format(format, args);
+    }
+
+    public String getFormat() {
+        return format;
+    }
 }

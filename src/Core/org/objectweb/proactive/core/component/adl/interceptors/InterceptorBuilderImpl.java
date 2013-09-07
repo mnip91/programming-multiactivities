@@ -34,16 +34,41 @@
  * ################################################################
  * $$PROACTIVE_INITIAL_DEV$$
  */
-package functionalTests.component.interceptor;
+package org.objectweb.proactive.core.component.adl.interceptors;
 
-public interface InputOutputInterceptor extends InputInterceptor1, OutputInterceptor1 {
-    public static final String INPUT_OUTPUT_INTERCEPTOR_NAME = "input-output-interceptor";
-    public static final String AFTER_INPUT_INTERCEPTION = " - after-input-interception-" +
-        INPUT_OUTPUT_INTERCEPTOR_NAME + " - ";
-    public static final String BEFORE_INPUT_INTERCEPTION = " - before-input-interception-" +
-        INPUT_OUTPUT_INTERCEPTOR_NAME + " - ";
-    public static final String AFTER_OUTPUT_INTERCEPTION = " - after-output-interception-" +
-        INPUT_OUTPUT_INTERCEPTOR_NAME + " - ";
-    public static final String BEFORE_OUTPUT_INTERCEPTION = " - before-output-interception-" +
-        INPUT_OUTPUT_INTERCEPTOR_NAME + " - ";
+import org.objectweb.fractal.api.Component;
+import org.objectweb.fractal.api.NoSuchInterfaceException;
+import org.objectweb.proactive.core.component.Utils;
+import org.objectweb.proactive.core.component.interception.Interceptor;
+
+
+/**
+ * ProActive based implementation of the {@link InterceptorBuilder} interface.
+ * <br>
+ * Uses the API to add {@link Interceptor interceptors} to functional interfaces.
+ * 
+ * @author The ProActive Team
+ */
+public class InterceptorBuilderImpl implements InterceptorBuilder {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addInterceptor(Object component, String interfaceName, String interceptorID) throws Exception {
+        try {
+            // The membrane controller must be started to use the interceptor controller
+            Utils.getPAMembraneController((Component) component).startMembrane();
+        } catch (NoSuchInterfaceException nsie) {
+            // No membrane controller, ignore this exception
+        }
+
+        Utils.getPAInterceptorController((Component) component).addInterceptorOnInterface(interfaceName,
+                interceptorID);
+
+        try {
+            Utils.getPAMembraneController((Component) component).stopMembrane();
+        } catch (NoSuchInterfaceException nsie) {
+            // No membrane controller, ignore this exception
+        }
+    }
 }
