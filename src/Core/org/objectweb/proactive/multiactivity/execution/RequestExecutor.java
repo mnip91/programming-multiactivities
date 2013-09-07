@@ -338,42 +338,44 @@ public class RequestExecutor implements FutureWaiter, ServingController {
                 }
                 
                 if (log.isDebugEnabled()) {
-                    StringBuilder buf = new StringBuilder();
-                    buf.append("Dumping Queues Content on ");
-                    buf.append(body.getID());
-                    buf.append("\nRequest queue=[");
-                    
-                    Iterator<Request> it = this.requestQueue.getInternalQueue().iterator();
-                    while (it.hasNext()) {
-                        buf.append(RequestExecutor.toString(it.next()));
-                        
-                        if (it.hasNext()) {
-                            buf.append(" ");
-                        }
-                    }
+                    synchronized (this) {
+                        StringBuilder buf = new StringBuilder();
+                        buf.append("Dumping Queues Content on ");
+                        buf.append(body.getID());
+                        buf.append("\nRequest queue=[");
 
-                    buf.append("]\nReady queue=[");
-                   
-                    it = this.getPriorityManager().getReadyRequests().iterator();
-                    while (it.hasNext()) {
-                        buf.append(RequestExecutor.toString(it.next()));
-                        if (it.hasNext()) {
-                            buf.append(" ");
-                        }
-                    }
+                        Iterator<Request> it = this.requestQueue.getInternalQueue().iterator();
+                        while (it.hasNext()) {
+                            buf.append(RequestExecutor.toString(it.next()));
 
-                    buf.append("]\nExecuting queue=[");
-                    
-                    it = compatibility.getExecutingRequests().iterator();
-                   while (it.hasNext()) {
-                        buf.append(RequestExecutor.toString(it.next()));
-                        if (it.hasNext()) {
-                            buf.append(" ");
+                            if (it.hasNext()) {
+                                buf.append(" ");
+                            }
                         }
-                    }
-                    buf.append("]");
 
-                    log.trace(buf.toString());
+                        buf.append("]\nReady queue=[");
+
+                        it = this.getPriorityManager().getReadyRequests().iterator();
+                        while (it.hasNext()) {
+                            buf.append(RequestExecutor.toString(it.next()));
+                            if (it.hasNext()) {
+                                buf.append(" ");
+                            }
+                        }
+
+                        buf.append("]\nExecuting queue=[");
+
+                        it = compatibility.getExecutingRequests().iterator();
+                        while (it.hasNext()) {
+                            buf.append(RequestExecutor.toString(it.next()));
+                            if (it.hasNext()) {
+                                buf.append(" ");
+                            }
+                        }
+                        buf.append("]");
+
+                        log.trace(buf.toString());
+                    }
                 }
 
                 try {
