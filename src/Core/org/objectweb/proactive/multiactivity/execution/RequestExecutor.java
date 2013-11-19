@@ -603,7 +603,14 @@ public class RequestExecutor implements FutureWaiter, ServingController {
         result.append('(');
 
         for (int i = 0; i < request.getMethodCall().getNumberOfParameter(); i++) {
-            result.append(request.getMethodCall().getParameter(i).getClass());
+            Object parameter = request.getMethodCall().getParameter(i);
+
+            if (parameter == null) {
+                result.append("null");
+            } else {
+                result.append(parameter.getClass());
+            }
+            
             result.append("|ihc=");
             result.append(System.identityHashCode(request));
 
