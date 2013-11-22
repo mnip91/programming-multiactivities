@@ -36,17 +36,16 @@
  */
 package org.objectweb.proactive.multiactivity.policy;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.objectweb.proactive.core.body.request.Request;
 import org.objectweb.proactive.core.util.log.Loggers;
 import org.objectweb.proactive.core.util.log.ProActiveLogger;
 import org.objectweb.proactive.multiactivity.compatibility.StatefulCompatibilityMap;
+import org.objectweb.proactive.multiactivity.execution.RequestExecutor;
 
 
 /**
@@ -57,11 +56,12 @@ import org.objectweb.proactive.multiactivity.compatibility.StatefulCompatibility
  */
 public class DefaultServingPolicy extends ServingPolicy {
 
-    protected static final Logger logger = ProActiveLogger.getLogger(Loggers.MULTIACTIVITY);
+    protected static final Logger log = ProActiveLogger.getLogger(Loggers.MULTIACTIVITY);
 
-    protected final Set<Request> invalid = new HashSet<Request>();
+    // protected final Set<Request> invalid = new HashSet<Request>();
 
-    protected final Map<Request, Set<Request>> invalidates = new HashMap<Request, Set<Request>>();
+    // protected final Map<Request, Set<Request>> invalidates =
+    // new HashMap<Request, Set<Request>>();
 
     /**
      * Default scheduling policy. <br>
@@ -77,40 +77,98 @@ public class DefaultServingPolicy extends ServingPolicy {
     public int runPolicyOnRequest(int requestIndex, StatefulCompatibilityMap compatibility,
             List<Request> runnableRequests) {
         List<Request> requestQueue = compatibility.getQueueContents();
+        Request request = requestQueue.get(requestIndex);
 
-        int lastIndex = -2;
+        // int lastIndex = -2;
+        // boolean valid = !invalid.contains(requestQueue.get(requestIndex));
+        // (lastIndex =
+        // compatibility.getIndexOfLastCompatibleWith(
+        // requestQueue.get(requestIndex),
+        // requestQueue.subList(0, requestIndex))) == requestIndex - 1;
 
-        if (!invalid.contains(requestQueue.get(requestIndex)) &&
-            compatibility.isCompatibleWithExecuting(requestQueue.get(requestIndex)) &&
-            (lastIndex = compatibility.getIndexOfLastCompatibleWith(requestQueue.get(requestIndex),
-                    requestQueue.subList(0, requestIndex))) == requestIndex - 1) {
-            Request r = requestQueue.get(requestIndex);
+        boolean compatibleWithExecuting = compatibility.isCompatibleWithExecuting(requestQueue
+                .get(requestIndex));
 
-            runnableRequests.add(r);
-            compatibility.addRunning(r);
+        boolean compatibleWithPreceding;
 
-            if (invalidates.containsKey(requestQueue.get(requestIndex))) {
-                for (Request ok : invalidates.get(requestQueue.get(requestIndex))) {
-                    invalid.remove(ok);
-                }
-                invalidates.remove(requestQueue.get(requestIndex));
-            }
+        boolean runnable = compatibleWithExecuting &&
+            (compatibleWithPreceding = isCompatibleWithPreceding(compatibility, request, requestIndex));
+
+        if (log.isDebugEnabled()) {
+            // compute the value in any case when debug is enabled
+            compatibleWithPreceding = isCompatibleWithPreceding(compatibility, request, requestIndex);
+
+            StringBuilder msg = new StringBuilder();
+            msg.append("Is ");
+            msg.append(RequestExecutor.toString(requestQueue.get(requestIndex)));
+            msg.append(" runnable? ");
+            msg.append(runnable);
+            msg.append(", compatibleWithExecuting? ");
+            msg.append(compatibleWithExecuting);
+            msg.append(", compatibleWithPreceding? ");
+            msg.append(compatibleWithPreceding);
+            msg.append(", executing=[");
+            msg.append(toString(compatibility.getExecutingRequests()));
+            msg.append("], preceding=[");
+            msg.append(toString(requestQueue.subList(0, requestIndex)));
+            msg.append("]");
+
+            log.debug(msg.toString());
+        }
+
+        if (runnable) {
+            runnableRequests.add(request);
+            compatibility.addRunning(request);
+
+            // if (invalidates.containsKey(requestQueue.get(requestIndex))) {
+            // for (Request ok :
+            // invalidates.get(requestQueue.get(requestIndex))) {
+            // invalid.remove(ok);
+            // }
+            // invalidates.remove(requestQueue.get(requestIndex));
+            // }
 
             requestQueue.remove(requestIndex);
 
             return --requestIndex;
-        } else if (lastIndex > -2 && lastIndex < requestIndex) {
-            lastIndex++;
-
-            if (!invalidates.containsKey(requestQueue.get(lastIndex))) {
-                invalidates.put(requestQueue.get(lastIndex), new HashSet<Request>());
-            }
-
-            invalidates.get(requestQueue.get(lastIndex)).add(requestQueue.get(requestIndex));
-            invalid.add(requestQueue.get(requestIndex));
         }
+        // else if (lastIndex > -2 && lastIndex < requestIndex) {
+        // lastIndex++;
+        //
+        // if (!invalidates.containsKey(requestQueue.get(lastIndex))) {
+        // invalidates.put(
+        // requestQueue.get(lastIndex), new HashSet<Request>());
+        // }
+        //
+        // invalidates.get(requestQueue.get(lastIndex)).add(
+        // requestQueue.get(requestIndex));
+        // invalid.add(requestQueue.get(requestIndex));
+        // }
 
         return requestIndex;
+    }
+
+    private final boolean isCompatibleWithPreceding(StatefulCompatibilityMap compatibility, Request request,
+            int requestIndex) {
+        List<Request> requestQueue = compatibility.getQueueContents();
+
+        return compatibility.getIndexOfLastCompatibleWith(requestQueue.get(requestIndex), requestQueue
+                .subList(0, requestIndex)) == requestIndex - 1;
+    }
+
+    public static String toString(Collection<Request> requests) {
+        StringBuilder result = new StringBuilder();
+
+        Iterator<Request> it = requests.iterator();
+
+        while (it.hasNext()) {
+            result.append(RequestExecutor.toString(it.next()));
+
+            if (it.hasNext()) {
+                result.append(", ");
+            }
+        }
+        return result.toString();
     }
 
 }
