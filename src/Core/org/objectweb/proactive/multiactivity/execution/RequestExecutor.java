@@ -43,9 +43,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
@@ -174,7 +177,10 @@ public class RequestExecutor implements FutureWaiter, ServingController {
         this.requestQueue = body.getRequestQueue();
         this.priorityManager = new PriorityManager(priorityConstraints);
 
-        executorService = Executors.newCachedThreadPool();
+        // similar to Executors.newCachedThreadPool() 
+        executorService = new ThreadPoolExecutorNameUpdater(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+            new SynchronousQueue<Runnable>());
+
         active = new HashSet<RunnableRequest>();
         waiting = new HashSet<RunnableRequest>();
         hasArrived = new HashSet<FutureID>();
@@ -183,6 +189,36 @@ public class RequestExecutor implements FutureWaiter, ServingController {
         hostMap = new ConcurrentHashMap<RunnableRequest, RunnableRequest>();
 
         FutureWaiterRegistry.putForBody(body.getID(), this);
+    }
+
+    private final class ThreadPoolExecutorNameUpdater extends ThreadPoolExecutor {
+
+        private String bodyID = body.getID().toString();
+
+        public ThreadPoolExecutorNameUpdater(int corePoolSize, int maximumPoolSize, long keepAliveTime,
+                TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected void beforeExecute(Thread thread, Runnable r) {
+            thread.setName("MAOs Executor Thread(" + thread.getId() + ") for " + this.bodyID);
+            super.beforeExecute(thread, r);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected void afterExecute(Runnable r, Throwable t) {
+            Thread thread = Thread.currentThread();
+            thread.setName("IDLE MAOs Executor Thread(" + thread.getId() + ") for " + this.bodyID);
+            super.afterExecute(r, t);
+        }
+
     }
 
     /**
@@ -336,7 +372,7 @@ public class RequestExecutor implements FutureWaiter, ServingController {
                         }
                     }
                 }
-                
+
                 if (log.isDebugEnabled()) {
                     synchronized (this) {
                         StringBuilder buf = new StringBuilder();
@@ -392,6 +428,8 @@ public class RequestExecutor implements FutureWaiter, ServingController {
      * Serving and Thread management.
      */
     private void internalExecute() {
+        final boolean isTraceEnabled = log.isTraceEnabled();
+
         synchronized (this) {
             while (body.isActive()) {
 
@@ -404,7 +442,7 @@ public class RequestExecutor implements FutureWaiter, ServingController {
 
                         i = selectedPriorityGroup.iterator();
 
-                        if (i.hasNext()) {
+                        if (isTraceEnabled && i.hasNext()) {
                             log.trace("Requests served SAME_THREAD_REENTRANT");
                         }
                         // see if we can serve a request on the thread of an
@@ -422,11 +460,11 @@ public class RequestExecutor implements FutureWaiter, ServingController {
                                                     log.trace("  " + toString(parasite.getRequest()));
                                                 }
 
-                                                i.remove();
                                                 active.add(parasite);
                                                 hostMap.put(host, parasite);
                                                 requestTags.get(tag).remove(host);
                                                 parasite.setHostedOn(host);
+                                                i.remove();
                                                 host.notify();
                                                 break;
                                             }
@@ -468,17 +506,17 @@ public class RequestExecutor implements FutureWaiter, ServingController {
 
                     i = selectedPriorityGroup.iterator();
 
-                    if (i.hasNext()) {
+                    if (isTraceEnabled && i.hasNext()) {
                         log.trace("Requests served " + body.getReifiedObject().toString());
                     }
 
                     while (canServeOne() && i.hasNext()) {
                         RunnableRequest current = i.next();
-                        i.remove();
                         active.add(current);
                         executorService.execute(current);
+                        i.remove();
 
-                        if (log.isTraceEnabled()) {
+                        if (isTraceEnabled) {
                             log.trace("  " + toString(current.getRequest()));
                         }
                     }
@@ -501,7 +539,7 @@ public class RequestExecutor implements FutureWaiter, ServingController {
                             i = l.iterator();
 
                             StringBuilder buf = null;
-                            if (log.isTraceEnabled()) {
+                            if (isTraceEnabled) {
                                 buf = new StringBuilder();
 
                                 if (i.hasNext()) {
@@ -514,11 +552,11 @@ public class RequestExecutor implements FutureWaiter, ServingController {
                             while (pc.hasFreeBoostThreads() && i.hasNext()) {
                                 RunnableRequest current = i.next();
                                 current.setBoosted();
-                                this.priorityManager.unregister(current, pc.getPriorityLevel());
                                 pc.incrementActiveBoostThreads();
                                 executorService.execute(current);
+                                this.priorityManager.unregister(current, pc.getPriorityLevel());
 
-                                if (log.isTraceEnabled()) {
+                                if (isTraceEnabled) {
                                     buf.append("  ");
                                     buf.append(toString(current.getRequest()));
 
@@ -528,7 +566,7 @@ public class RequestExecutor implements FutureWaiter, ServingController {
                                 }
                             }
 
-                            if (log.isTraceEnabled() && buf.length() > 0) {
+                            if (isTraceEnabled && buf.length() > 0) {
                                 log.trace(buf.toString());
                             }
                         }
@@ -610,7 +648,7 @@ public class RequestExecutor implements FutureWaiter, ServingController {
             } else {
                 result.append(parameter.getClass());
             }
-            
+
             result.append("|ihc=");
             result.append(System.identityHashCode(request));
 
