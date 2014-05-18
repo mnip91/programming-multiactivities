@@ -41,6 +41,7 @@ import java.util.List;
 
 import org.etsi.uri.gcm.api.control.PriorityController;
 import org.objectweb.proactive.core.body.request.Request;
+import org.objectweb.proactive.core.component.Constants;
 import org.objectweb.proactive.core.component.body.NF2RequestFilter;
 import org.objectweb.proactive.core.component.body.NF3RequestFilter;
 import org.objectweb.proactive.core.component.body.NFRequestFilterImpl;
@@ -171,6 +172,10 @@ public class ComponentPriorityServingPolicy extends ComponentServingPolicy {
             }
 
             if (nf3Request || nf2Request) {
+            	/*
+            	 * Modifying policy in order to support NF and F request in parallel.
+            	 * - mibanez
+            	 * 
                 if (compatibility.getNumberOfExecutingRequests() != 0) {
                     // Requests are already running, need to wait they terminate
                     return new ArrayList<Request>();
@@ -179,12 +184,35 @@ public class ComponentPriorityServingPolicy extends ComponentServingPolicy {
                     addRequestToRunnableRequests(reqs, nfRequestIndex, compatibility, ret);
 
                     return ret;
-                }
+                }*/
+
+	            if (compatibility.getNumberOfExecutingRequests() != 0) {
+	            	String itfName = this.getRequestComponentInterfaceName(reqs.get(nfRequestIndex));
+	            	if (itfName.equals(Constants.LIFECYCLE_CONTROLLER)) {
+	            		// Life Cycle can't run in parallel with other requests
+                        return new ArrayList<Request>();
+	            	}
+	            	
+	            	for (Request req : compatibility.getExecutingRequests()) {
+			        	if (this.nfRequestFilter.acceptRequest(req)) {
+			        		// NF Request are already running, need to wait they terminate
+			        		return new ArrayList<Request>();
+			        	}
+	            	}
+	            }
+
+            	// The NF3 or NF2 request can be served
+            	addRequestToRunnableRequests(reqs, nfRequestIndex, compatibility, ret);
+                return ret;
             }
 
             for (int i = 0; i < reqs.size(); i++) {
                 if (this.nfRequestFilter.acceptRequest(reqs.get(i))) {
                     // NF1 request
+                	/*
+                	 * Modifying policy in order to support NF and F request in parallel.
+                	 * - mibanez
+                	 * 
                     if ((compatibility.getNumberOfExecutingRequests() == 0) && (ret.size() == 0)) {
                         // The NF1 request can be served
                         addRequestToRunnableRequests(reqs, nfRequestIndex, compatibility, ret);
@@ -193,6 +221,28 @@ public class ComponentPriorityServingPolicy extends ComponentServingPolicy {
                     } else {
                         break;
                     }
+                    */
+
+                    if (this.getRequestComponentInterfaceName(reqs.get(i)).equals(Constants.LIFECYCLE_CONTROLLER)) {
+                    	if ((compatibility.getNumberOfExecutingRequests() == 0) && (ret.size() == 0)) {
+                            // The NF1 request can be served
+                            addRequestToRunnableRequests(reqs, nfRequestIndex, compatibility, ret);
+                            return ret;
+                    	}
+                    	// Life Cycle can't run in parallel with other requests, need to wait
+                    	break;
+                    }
+
+                	for (Request req : compatibility.getExecutingRequests()) {
+                		if (this.nfRequestFilter.acceptRequest(req)) {
+                			// The NF1 cannot be served, there is an NF request already running
+                			break;
+                		}
+                	}
+
+                	// The NF1 can be served
+                    addRequestToRunnableRequests(reqs, nfRequestIndex, compatibility, ret);
+                    return ret;
                 }
 
                 i = this.runPolicyOnRequest(i, compatibility, ret);
