@@ -407,6 +407,18 @@ public abstract class AbstractBody extends AbstractUniversalBody implements Body
                     e.printStackTrace();
                 }
             }
+
+            // cruz: before effectively register the incoming futures, set the correct tags to all of them,
+            // based on the tags of the Reply
+            java.util.ArrayList<Future> incomingFutures = FuturePool.getIncomingFutures();
+            if(incomingFutures != null) {
+            	for(Future f : incomingFutures) {
+               		// if reply == null, this will FAIL (but it shouldn't happen, right?)
+            		f.setTags(reply.getTags());
+            	}
+            }
+            // --cruz
+
             this.registerIncomingFutures();
             ftres = internalReceiveReply(reply);
             if (GarbageCollector.dgcIsEnabled()) {

@@ -34,35 +34,56 @@
  * ################################################################
  * $$PROACTIVE_INITIAL_DEV$$
  */
-package org.objectweb.proactive.core.component.componentcontroller;
+package org.objectweb.proactive.core.body.future;
 
 import java.io.Serializable;
 
-import org.apache.log4j.Logger;
-import org.objectweb.fractal.api.Component;
-import org.objectweb.proactive.core.component.identity.PAComponent;
-import org.objectweb.proactive.core.util.log.Loggers;
-import org.objectweb.proactive.core.util.log.ProActiveLogger;
-
+import org.objectweb.proactive.core.body.UniversalBody;
+import org.objectweb.proactive.core.body.tags.MessageTags;
 
 /**
- * Base class for all controller components.
- *
- * @author The ProActive Team
+ * Container for storing bodies and associated tags.
+ * To be used by the FuturePool when storing the destination bodies, and then adding
+ * new Automatic Continuations.
+ * 
+ * @author cruz
  *
  */
-public abstract class AbstractPAComponentController implements Serializable, HostComponentSetter {
-    protected static Logger controllerLogger = ProActiveLogger.getLogger(Loggers.COMPONENTS_CONTROLLERS);
-    protected PAComponent hostComponent;
+public class BodiesAndTags implements Serializable {
 
-    /**
-     * Constructor for AbstractPAComponentController.
-     *
-     */
-    public AbstractPAComponentController() {
-    }
+	private static final long serialVersionUID = 1L;
 
-    public void setHostComponent(Component hostComponent) {
-        this.hostComponent = (PAComponent) hostComponent;
-    }
+	/** destination body */
+	UniversalBody body;
+	
+	/** message tags to be attached when a sending a reply for this body */
+	MessageTags tags;
+	
+	public BodiesAndTags() {
+		this.body = null;
+		this.tags = null;
+	}
+	
+	public BodiesAndTags(UniversalBody body) {
+		this.body = body;
+		this.tags = null;
+	}
+	
+	public BodiesAndTags(UniversalBody body, MessageTags tags) {
+		this.body = body;
+		this.tags = tags;
+	}
+	
+	public UniversalBody getBody() {
+		return this.body;
+	}
+	
+	public MessageTags getTags() {
+		return this.tags;
+	}
+	
+	public void setTags(MessageTags tags) {
+		this.tags = tags;
+	}
+	
 }

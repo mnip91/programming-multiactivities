@@ -58,12 +58,15 @@ import org.objectweb.proactive.core.body.future.FuturePool;
 import org.objectweb.proactive.core.body.future.LocalFutureUpdateCallbacks;
 import org.objectweb.proactive.core.body.future.MethodCallResult;
 import org.objectweb.proactive.core.body.proxy.AbstractProxy;
+import org.objectweb.proactive.core.body.tags.MessageTags;
+import org.objectweb.proactive.core.body.tags.Tag;
 import org.objectweb.proactive.core.exceptions.ExceptionHandler;
 import org.objectweb.proactive.core.exceptions.ExceptionMaskLevel;
 import org.objectweb.proactive.core.group.DispatchMonitor;
 import org.objectweb.proactive.core.jmx.mbean.BodyWrapperMBean;
 import org.objectweb.proactive.core.jmx.notification.FutureNotificationData;
 import org.objectweb.proactive.core.jmx.notification.NotificationType;
+import org.objectweb.proactive.core.jmx.notification.RequestNotificationData;
 import org.objectweb.proactive.core.mop.ConstructionOfReifiedObjectFailedException;
 import org.objectweb.proactive.core.mop.ConstructorCall;
 import org.objectweb.proactive.core.mop.MOP;
@@ -146,6 +149,11 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
     // returns future update info used during dynamic dispatch for groups
     private transient DispatchMonitor dispatchMonitor;
 
+    //cruz
+	private String methodName = null;
+	private MessageTags tags;
+	private transient boolean ignoreNotification = false;
+    
     /**
      * As this proxy does not create a reified object (as opposed to
      * BodyProxy for example), it is the noargs constructor that
@@ -224,6 +232,63 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
             dispatchMonitor.updatedResult(originatingProxy);
         }
         target = obj;
+
+        // cruz
+        String resultTypeName = "";
+        if(obj.getResult() != null) {
+        	resultTypeName = obj.getResult().getClass().getName();
+        }
+
+        logger.debug("[FutureProxy] receiveReply. This: ID[" + this.getID()+ "], SenderID ["+ senderID +"]. IsAwaited? "+isAwaited(obj.getResult()) + " methodName:["+ methodName +"] FutureTags "+ this.getTags() );
+        
+        if(isAwaited(target.getResult())) {       	
+        	// now I can give the name of method I'm still waiting for, to the new pair stub-proxy, so he will know how to generate (later) the realReplyReceived notification
+        	FutureProxy futureReceived = ((FutureProxy)((StubObject)target.getResult()).getProxy());
+        	logger.debug("[FutureProxy] receiveReply. ID:" + futureReceived.getID()+ ", not realReply. Had [" + futureReceived.getMethodName() +"] Tags "+ futureReceived.getTags() );
+        	futureReceived.setMethodName(this.methodName);
+
+        	// propagation of the tags to the new pair stub-proxy
+        	futureReceived.setTags(this.tags);
+        	logger.debug("[FutureProxy] receiveReply. ID:" + futureReceived.getID()+ ", not realReply. Now [" + futureReceived.getMethodName() +"] Tags "+ futureReceived.getTags() );
+        }
+        else {
+        	Body body = LocalBodyStore.getInstance().getLocalBody(senderID);        	
+        	
+        	// Generate the JMX notification RealReplyReceived
+        	logger.debug("[FutureProxy] receiveReply. ID[" + this.getID() + "], received REAL REPLY for method "+ methodName + " in body ["+ senderID +"]");
+
+        	// if the update is because an orphan value had arrived, don't send the notification now, or we may risk duplicate notifications,
+        	// and one of them (the first one) will have the wrong tags.
+        	// A subsequent call to receiveReply will send the notification.
+        	// This relies on the fact that the reception of orphans is done by calling FuturePool.receiveFutureValue with reply==null.
+        	// If that is changed, this is not guaranteed to work properly.
+        	// 
+    		if(body != null && !ignoreNotification) {
+    			// if it's a half body, it won't have an mbean to send notifications
+    			BodyWrapperMBean mbean = body.getMBean();
+    			if(mbean != null) {
+    				String tagNotification = createTagNotification(this.tags);
+    				// TODO correct the parameters for source and destination
+    				//      the MonitorController is not reading them for the moment
+    				RequestNotificationData requestNotificationData = new RequestNotificationData(
+    						null, null, null, null,
+    						this.methodName, -1, this.id.getID(),
+    						tagNotification);
+    				mbean.sendNotification(NotificationType.realReplyReceived, requestNotificationData);
+            		//System.out.println("REAL REPLY RECEIVED (FutureProxy) ["+id.getID()+"] in ["+ body.getName() +"] tags "+ this.getTags() + " sent to mbean ["+ mbean.getName() +"]");
+    			}
+    			else {
+    				//System.out.println("NOT SENT REAL REPLY RECEIVED (FutureProxy) --no mbean-- ["+id.getID()+"] in ["+ body.getName() +" tags "+ this.getTags());
+    			}
+    		}
+    		else if(body != null) {
+    			if (ignoreNotification) {
+    				//System.out.println("NOT SENT REAL REPLY RECEIVED (FutureProxy) --orphan value-- ["+id.getID()+"] in ["+ (body==null?"---":body.getName()) +" tags "+ this.getTags());
+    			}
+    		}
+        }
+        // -- cruz
+
         ExceptionHandler.addResult(this);
         FutureMonitoring.removeFuture(this);
 
@@ -343,6 +408,19 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
             if (mbean != null) {
                 mbean.sendNotification(NotificationType.waitByNecessity, new FutureNotificationData(bodyId,
                     getCreatorID()));
+
+                // cruz--
+                // send requestWbN notification, with info related to the request
+                String tagNotification = createTagNotification(this.tags);
+				// TODO correct the parameters for source and destination
+				//      the MonitorController is not reading them for the moment
+				RequestNotificationData requestNotificationData = new RequestNotificationData(
+						null, null, null, null,
+						this.methodName, -1, this.id.getID(),
+						tagNotification);
+				mbean.sendNotification(NotificationType.requestWbN, requestNotificationData);
+		        logger.debug("[FutureProxy] ID:["+ id.getID() + "] WaitByNecessity, method ["+ methodName+"], Tags "+ this.getTags() );
+		        // --cruz
             }
         }
 
@@ -364,9 +442,31 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
         if (mbean != null) {
             mbean.sendNotification(NotificationType.receivedFutureResult, new FutureNotificationData(bodyId,
                 getCreatorID()));
-        }
 
+	            // cruz--
+	            // WARNING. If this is Future has been updated with the final value, then a Real Reply Received notification
+	            // has already been sent. 
+	            // That means that this notification will have a timestamp LATER than the Real Reply Received.
+	            // We can ignore that notification, or take care when computing the times for the last WbN
+	            //if(isAwaited(target.getResult())) {
+            	// send request Future Update notification, with info related to the request
+            	String tagNotification = createTagNotification(this.tags);
+            	// TODO correct the parameters for source and destination
+            	//      the MonitorController is not reading them for the moment
+            	RequestNotificationData requestNotificationData = new RequestNotificationData(
+            			null, null, null, null,
+            			this.methodName, -1, this.id.getID(),
+            			tagNotification);
+            	mbean.sendNotification(NotificationType.requestFutureUpdate, requestNotificationData);
+            	logger.debug("[FutureProxy] ID:["+ id.getID() + "] FUTURE UPDATE SENT, method ["+ methodName+"], Tags "+ this.getTags() );
+            	//}
+            	// --cruz
+        }
+        if(target.getResult() != null) {
+        	logger.debug("[FutureProxy] Future updated after waiting. ID:["+this.getID() +"], target type: ["+target.getResult().getClass().getName()+"]. IsAwaited?" + isAwaited(target.getResult()) + " Method ["+ methodName + "], Tags "+ this.getTags()  );
+        }
         // END JMX Notification
+
         if (Profiling.TIMERS_COMPILED) {
             TimerWarehouse
                     .stopTimer(PAActiveObject.getBodyOnThis().getID(), TimerWarehouse.WAIT_BY_NECESSITY);
@@ -398,6 +498,19 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
                 if (mbean != null) {
                     mbean.sendNotification(NotificationType.waitByNecessity, new FutureNotificationData(
                         bodyId, getCreatorID()));
+                    
+                    // cruz--
+                    // send requestWbN notification, with info related to the request
+                    String tagNotification = createTagNotification(this.tags);
+    				// TODO correct the parameters for source and destination
+    				//      the MonitorController is not reading them for the moment
+    				RequestNotificationData requestNotificationData = new RequestNotificationData(
+    						null, null, null, null,
+    						this.methodName, -1, this.id.getID(),
+    						tagNotification);
+    				mbean.sendNotification(NotificationType.requestWbN, requestNotificationData);
+    		        logger.debug("[FutureProxy] ID:["+ id.getID() + "] WaitByNecessity, method ["+ methodName+"], Tags "+ this.getTags() );
+    		        // --cruz
                 }
             }
 
@@ -414,8 +527,30 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
         if (mbean != null) {
             mbean.sendNotification(NotificationType.receivedFutureResult, new FutureNotificationData(bodyId,
                 getCreatorID()));
+            
+            // cruz--
+            // WARNING. If this is Future has been updated with the final value, then a Real Reply Received notification
+            // has already been sent. 
+            // That means that this notification will have a timestamp LATER than the Real Reply Received.
+            // We can ignore that notification, or take care when computing the times for the last WbN
+            //if(isAwaited(target.getResult())) {
+        	// send request Future Update notification, with info related to the request
+        	String tagNotification = createTagNotification(this.tags);
+        	// TODO correct the parameters for source and destination
+        	//      the MonitorController is not reading them for the moment
+        	RequestNotificationData requestNotificationData = new RequestNotificationData(
+        			null, null, null, null,
+        			this.methodName, -1, this.id.getID(),
+        			tagNotification);
+        	mbean.sendNotification(NotificationType.requestFutureUpdate, requestNotificationData);
+        	logger.debug("[FutureProxy] ID:["+ id.getID() + "] FUTURE UPDATE SENT, method ["+ methodName+"], Tags "+ this.getTags() );
+        	//}
+        	// --cruz
         }
-
+        if(target.getResult() != null) {
+        	logger.debug("[FutureProxy] Future updated after waiting. ID:["+this.getID() +"], target type: ["+target.getResult().getClass().getName()+"]. IsAwaited?" + isAwaited(target.getResult()) + " Method ["+ methodName + "], Tags "+ this.getTags()  );
+        }
+       
         // END JMX Notification
         if (Profiling.TIMERS_COMPILED) {
             TimerWarehouse
@@ -459,6 +594,10 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
     public UniversalBody getUpdater() {
         return this.updater;
     }
+
+    public UniqueID getSenderID() {
+    	return senderID;
+	}
 
     public void setSenderID(UniqueID i) {
         senderID = i;
@@ -541,7 +680,7 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
                     if (continuation) {
                         /* The written future will be updated by the writing body */
                         writtenUpdater = PAActiveObject.getBodyOnThis();
-                        for (UniversalBody dest : FuturePool.getBodiesDestination()) {
+                        for (BodiesAndTags dest : FuturePool.getBodiesDestination()) {
                             sender.getFuturePool().addAutomaticContinuation(id, dest);
                         }
                     } else {
@@ -572,6 +711,9 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
         out.writeObject(id);
         // Pass a reference to the updater
         out.writeObject(writtenUpdater.getRemoteAdapter());
+        //--cruz
+        out.writeObject(methodName);
+        out.writeObject(tags);
     }
 
     /**
@@ -584,6 +726,12 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
         target = (MethodCallResult) in.readObject();
         id = (FutureID) in.readObject();
         updater = (UniversalBody) in.readObject();
+        
+        // cruz
+        methodName = (String) in.readObject();
+        tags = (MessageTags) in.readObject();
+        ignoreNotification = false;
+        
         // register all incoming futures, even for migration or checkpointing
         if (this.isAwaited()) {
             FuturePool.registerIncomingFuture(this);
@@ -668,4 +816,39 @@ public class FutureProxy implements Future, Proxy, java.io.Serializable {
     public synchronized void setDispatchMonitor(DispatchMonitor dispatchMonitor) {
         this.dispatchMonitor = dispatchMonitor;
     }
+
+	public String getMethodName() {
+		return methodName;
+	}
+
+	public void setMethodName(String methodName) {
+		this.methodName = methodName;
+	}
+	
+	public MessageTags getTags()  {
+		return tags;	
+	}
+	
+	public void setTags(MessageTags messageTags) {
+		this.tags = messageTags;
+	}
+	
+    private String createTagNotification(MessageTags tags) {
+        String result = "";
+        if (tags != null) {
+            for (Tag tag : tags.getTags()) {
+                result += tag.getNotificationMessage();
+            }
+        }
+        return result;
+    }
+    
+    public boolean isIgnoreNotification() {
+    	return this.ignoreNotification;
+    }
+    
+    public void setIgnoreNotification(boolean b) {
+    	ignoreNotification = b;
+    }
+
 }

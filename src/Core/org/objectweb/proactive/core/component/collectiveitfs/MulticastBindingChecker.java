@@ -131,6 +131,11 @@ public class MulticastBindingChecker implements Serializable {
             // 3. check parameters types
             Type[] serverSideParametersTypes = serverSideMethod.getGenericParameterTypes();
 
+            // cruz: additional check. If the server method has a different number of parameters, then it is not a match
+            if(serverSideParametersTypes.length != clientSideParametersTypes.length) {
+            	continue serverSideMethodsLoop;
+            } //--cruz
+
             for (int i = 0; i < serverSideMethod.getGenericParameterTypes().length; i++) {
                 if (!(paramDispatchModes[i].match(clientSideParametersTypes[i], serverSideParametersTypes[i]))) {
                     continue serverSideMethodsLoop;

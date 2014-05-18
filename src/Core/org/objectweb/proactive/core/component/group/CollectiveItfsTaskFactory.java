@@ -44,6 +44,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
 import org.objectweb.proactive.api.PAActiveObject;
+import org.objectweb.proactive.core.body.LocalBodyStore;
+import org.objectweb.proactive.core.body.request.Request;
 import org.objectweb.proactive.core.component.collectiveitfs.MulticastHelper;
 import org.objectweb.proactive.core.component.exceptions.ParameterDispatchException;
 import org.objectweb.proactive.core.component.identity.PAComponent;
@@ -101,7 +103,11 @@ public class CollectiveItfsTaskFactory extends BasicTaskFactory {
         if (!(result == null)) {
             memberListOfResultGroup = initializeResultsGroup(result, methodCalls.size());
         }
-
+        
+        //cruz
+        Request parentRequest = LocalBodyStore.getInstance().getContext().getCurrentRequest();
+        //--cruz
+        
         for (int i = 0; i < methodCalls.size(); i++) {
             MethodCall mc = methodCalls.get(i);
             AbstractProcessForGroup task = useOneWayProcess(mc) ? new ComponentProcessForOneWayCall(
@@ -111,7 +117,7 @@ public class CollectiveItfsTaskFactory extends BasicTaskFactory {
 
             : new ComponentProcessForAsyncCall(groupProxy, groupProxy.getMemberList(),
                 memberListOfResultGroup, taskIndexes.get(i), mc, i, PAActiveObject.getBodyOnThis(),
-                doneSignal);
+                doneSignal, parentRequest); //cruz
 
             setDynamicDispatchTag(task, originalMethodCall);
             taskList.offer(task);

@@ -40,6 +40,7 @@ import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
 
 import org.objectweb.proactive.Body;
+import org.objectweb.proactive.core.body.request.Request;
 import org.objectweb.proactive.core.component.PAInterface;
 import org.objectweb.proactive.core.component.representative.PAComponentRepresentative;
 import org.objectweb.proactive.core.group.ProcessForAsyncCall;
@@ -59,6 +60,12 @@ public class ComponentProcessForAsyncCall extends ProcessForAsyncCall {
         super(proxyGroup, memberList, memberListOfResultGroup, groupIndex, mc, resultIndex, body, doneSignal);
     }
 
+    public ComponentProcessForAsyncCall(ProxyForGroup proxyGroup, Vector memberList,
+    		Vector memberListOfResultGroup, int groupIndex, MethodCall mc, int resultIndex, Body body,
+    		CountDownLatch doneSignal, Request parentRequest) {
+    	super(proxyGroup, memberList, memberListOfResultGroup, groupIndex, mc, resultIndex, body, doneSignal, parentRequest);
+	}
+    
     @Override
     public void executeMC(MethodCall mc, Object object) throws Throwable {
         if (object instanceof PAComponentRepresentative) {

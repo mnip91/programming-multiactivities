@@ -97,7 +97,8 @@ public class ComponentRequestImpl extends RequestImpl implements ComponentReques
     }
 
     public ComponentRequestImpl(Request request) {
-        super(request.getMethodCall(), request.getSender(), request.isOneWay(), request.getSequenceNumber());
+    	super(request.getMethodCall(), request.getSender(), request.isOneWay(), request.getSequenceNumber(), 
+    			request.getTags());
         declaringClass = methodCall.getReifiedMethod().getDeclaringClass();
     }
 

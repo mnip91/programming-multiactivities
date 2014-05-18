@@ -59,12 +59,17 @@ import org.objectweb.fractal.api.type.InterfaceType;
 import org.objectweb.fractal.api.type.TypeFactory;
 import org.objectweb.proactive.api.PAGroup;
 import org.objectweb.proactive.core.ProActiveRuntimeException;
+import org.objectweb.proactive.core.body.LocalBodyStore;
+import org.objectweb.proactive.core.body.request.Request;
+import org.objectweb.proactive.core.body.tags.MessageTags;
 import org.objectweb.proactive.core.component.Constants;
 import org.objectweb.proactive.core.component.PAInterface;
 import org.objectweb.proactive.core.component.collectiveitfs.MulticastBindingChecker;
 import org.objectweb.proactive.core.component.exceptions.ParameterDispatchException;
 import org.objectweb.proactive.core.component.group.PAComponentGroup;
 import org.objectweb.proactive.core.component.group.ProxyForComponentInterfaceGroup;
+import org.objectweb.proactive.core.component.representative.ItfID;
+import org.objectweb.proactive.core.component.request.ComponentRequest;
 import org.objectweb.proactive.core.component.type.PAComponentType;
 import org.objectweb.proactive.core.component.type.PAGCMInterfaceType;
 import org.objectweb.proactive.core.component.type.PAGCMTypeFactoryImpl;
@@ -441,9 +446,33 @@ public class PAMulticastControllerImpl extends AbstractCollectiveInterfaceContro
                             .get(generatedMethodCallIndex); // initialize
                 }
 
+                //cruz : What if I want a componentCall ?
+                String sourceInterfaceName = mc.getComponentMetadata().getComponentInterfaceName();
+                String destinationInterfaceName = ((PAInterface) delegatee.get(generatedMethodCallIndex % delegatee.size())).getFcItfName();
+                ItfID senderID = null; //new ItfID(sourceInterfaceName, owner.getID());
+                MessageTags currentTags = null;
+                Request currentRequest = LocalBodyStore.getInstance().getContext().getCurrentRequest();
+                if(currentRequest != null) {
+                	currentTags = currentRequest.getTags();
+                }
+                MethodCall mcMethodCall = MethodCall.getComponentMethodCall(matchingMethodInServerInterface, 
+                		individualEffectiveArguments, mc.getGenericTypesMapping(),  
+                		destinationInterfaceName, senderID, ComponentRequest.STRICT_FIFO_PRIORITY); //, currentTags, currentRequest );
+                
+                result.add(mcMethodCall);
+
+//                System.out.println("[PAMulticastControllerImpl.generateMethodsCallsForMulticastDelegatee] Src:     "+ sourceInterfaceName);
+//                System.out.println("                                                                      SrcName: "+ owner.getComponentParameters().getName());
+//                System.out.println("                                                                      SrcID:   "+ owner.getID());
+//                System.out.println("                                                                      Dest:    "+ destinationInterfaceName);
+//                if(currentTags != null) {
+//                	System.out.println("                                                                      Tags:    "+ currentTags.getTag(CMTag.IDENTIFIER));
+//                }
+                //--cruz
+
                 // no need for a "component" method call
-                result.add(MethodCall.getMethodCall(matchingMethodInServerInterface, mc
-                        .getGenericTypesMapping(), individualEffectiveArguments, mc.getExceptionContext()));
+                // result.add(MethodCall.getMethodCall(matchingMethodInServerInterface, mc
+                //        .getGenericTypesMapping(), individualEffectiveArguments, mc.getExceptionContext()));
                 //                      generatedMethodCallIndex % delegatee.size()); // previous workaround deemed unecessary with new initialization of result group
                 // default is to do some round robin when nbGeneratedMethodCalls > nbReceivers
             }

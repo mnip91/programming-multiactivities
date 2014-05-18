@@ -285,4 +285,9 @@ public class AwaitedRequest implements Request, java.io.Serializable {
     public MessageTags getTags() {
         return this.wrappedRequest.getTags();
     }
+    
+	public void setTags(MessageTags tags) {
+    	this.wrappedRequest.setTags(tags);
+	}
+
 }

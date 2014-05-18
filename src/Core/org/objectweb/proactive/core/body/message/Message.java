@@ -132,4 +132,6 @@ public interface Message {
      */
     public MessageTags getTags();
 
+    public void setTags(MessageTags tags);
+
 }

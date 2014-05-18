@@ -144,4 +144,7 @@ public class SynchronousReplyImpl implements Reply, Serializable {
         // TODO Auto-generated method stub
         return null;
     }
+
+    public void setTags(MessageTags tags) { }
+
 }

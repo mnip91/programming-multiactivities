@@ -39,6 +39,7 @@ package org.objectweb.proactive.core.component.type.annotations.multicast;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -246,7 +247,12 @@ public enum ParamDispatchMode implements ParamDispatch, Serializable {
             Type cType = ((ParameterizedType) clientSideInputParameterType).getActualTypeArguments()[0];
             if (cType instanceof ParameterizedType) {
                 clientSideElementsType = (Class<?>) ((ParameterizedType) cType).getRawType();
-            } else {
+            }
+            //cruz
+            else if(cType instanceof WildcardType) {
+            	clientSideElementsType = (Class<?>) ((WildcardType) cType).getUpperBounds()[0];
+            }//--cruz
+            else {
                 clientSideElementsType = (Class<?>) cType;
             }
         } else {
@@ -267,7 +273,12 @@ public enum ParamDispatchMode implements ParamDispatch, Serializable {
             Type sType = ((ParameterizedType) serverSideInputParameterType).getActualTypeArguments()[0];
             if (sType instanceof ParameterizedType) {
                 serverSideElementsType = (Class<?>) ((ParameterizedType) sType).getRawType();
-            } else {
+            }
+            //cruz
+            else if (sType instanceof WildcardType){
+            	serverSideElementsType = (Class<?>) ((WildcardType) sType).getUpperBounds()[0];
+            } //--cruz
+            else {
                 serverSideElementsType = (Class<?>) sType;
             }
 

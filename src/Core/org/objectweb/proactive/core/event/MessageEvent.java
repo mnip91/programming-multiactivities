@@ -179,6 +179,10 @@ public class MessageEvent extends ProActiveEvent implements Message, java.io.Ser
         return null;
     }
 
+    public void setTags(MessageTags tags) {
+    	getMessage().setTags(tags);
+	}
+
     //
     // -- PRIVATE METHODS -----------------------------------------------
     //
