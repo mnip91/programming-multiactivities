@@ -43,7 +43,9 @@ import java.util.Set;
 import org.objectweb.proactive.core.ProActiveRuntimeException;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.Metric;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.MetricValue;
-import org.objectweb.proactive.core.component.control.MethodStatistics;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.ComponentRequestID;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.IncomingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.OutgoingRequestRecord;
 import org.objectweb.proactive.core.component.type.annotations.multicast.ClassDispatchMetadata;
 import org.objectweb.proactive.core.component.type.annotations.multicast.ParamDispatchMetadata;
 import org.objectweb.proactive.core.component.type.annotations.multicast.ParamDispatchMode;
@@ -65,20 +67,10 @@ public interface MonitorControllerMulticast {
 	void stopGCMMonitoring();
 	void resetGCMMonitoring();
 	List<Boolean> isGCMMonitoringStarted();
+	List<Object> getGCMStatistics(String itfName, String methodName) throws ProActiveRuntimeException;
+	//List<Object> getGCMStatistics(String itfName, String methodName, Class<?>[] parameterTypes) throws ProActiveRuntimeException;
 	List<Map<String, Object>> getAllGCMStatistics();
-	//List<MethodStatistics> getGCMStatistics(String itfName, String methodName, Class<?>[] parametersTypes) throws ProActiveRuntimeException;
-	
-	//-------------------------------------------------------------------------------------------
-	// Adaptation for the GCM Monitoring API
-	
-	void startMonitoring();
-	void stopMonitoring();
-	void resetMonitoring();
-	List<Boolean> isMonitoringStarted();
-	List<Map<String, MethodStatistics>> getAllStatistics();
-	List<MethodStatistics> getStatistics(String itfName, String methodName) throws ProActiveRuntimeException;
-	//List<MethodStatistics> getStatistics(String itfName, String methodName, Class<?>[] parametersTypes) throws ProActiveRuntimeException;
-	
+
     //--------------------------------------------------------------------------------------------
     // Extensions for the Monitoring Framework
     //
@@ -122,22 +114,24 @@ public interface MonitorControllerMulticast {
     List<List<String>> getNotificationsReceived(); 
     
     List<String> getMonitoredComponentName();
-    
-    void addMetric(String name, Metric<?> metric);
-    List<MetricValue> runMetric(String name);
-    //List<Object> runMetric(String name, Object[] params);
-    List<MetricValue> getMetricValue(String name);
-    void setMetricValue(String name, Object value);
-   
-    List<List<String>> getMetricList();
 
-    // REMOTE METRICS API
+    // ------------------------------------------------------------------------------
 
-    List<MetricValue> getMetricList(String itfPath);
-    List<MetricValue> getMetricValue(String name, String itfPath);
-    void setMetricValue(String name, Object value, String itfPath);
+    public List<List<String>> getMetricList();
+
+    public List<List<String>> getMetricList(String itfPath);
+
+    public void addMetric(String name, Metric<?> metric);
+
+    public List<MetricValue> calculateMetric(String name);
+
+    public List<MetricValue> calculateMetric(String name, String itfPath);
+ 
+    public List<MetricValue> getMetricValue(String name);
     
-    List<MetricValue> runMetric(String name, String itfPath);
-    //List<Object> runMetric(String name, Object[] params, String itfPath);
-    
+    public List<MetricValue> getMetricValue(String name, String itfPath);
+
+    public void setMetricValue(String name, Object value);
+
+    public void setMetricValue(String name, Object value, String itfPath);
 }

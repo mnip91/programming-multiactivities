@@ -52,6 +52,7 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.met
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.MetricValue;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.ValidMetricValue;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.WrongMetricValue;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.RecordStore;
 
 
 public class MetricStoreImpl extends AbstractPAComponentController implements MetricStore, RemmosEventListener, BindingController {
@@ -196,10 +197,10 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 		Object remoteMon = getRemoteMonitorController(nextItfName);
 		
 		if (remoteMon instanceof MonitorController) {
-			return ((MonitorController) remoteMon).runMetric(name, getNextItfPath(itfPath));
+			return ((MonitorController) remoteMon).calculateMetric(name, getNextItfPath(itfPath));
 		}
 		else if (remoteMon instanceof MonitorControllerMulticast) {
-			return new ValidMetricValue(((MonitorControllerMulticast) remoteMon).runMetric(name, getNextItfPath(itfPath)), true);
+			return new ValidMetricValue(((MonitorControllerMulticast) remoteMon).calculateMetric(name, getNextItfPath(itfPath)), true);
 		}
 		
 		(new NoSuchInterfaceException(nextItfName)).printStackTrace();
@@ -247,11 +248,11 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	}
 
 	@Override
-	public MetricValue getMetricList(String itfPath) {
+	public List<String> getMetricList(String itfPath) {
 		String nextItfName = getNextItfName(itfPath);
 		if (nextItfName == null) {
 			// LocalRequest
-			return new ValidMetricValue(this.getMetricList(), false);
+			return getMetricList();
 		}
 
 		Object remoteMon = getRemoteMonitorController(nextItfName);
@@ -259,11 +260,13 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 		if (remoteMon instanceof MonitorController) {
 			return ((MonitorController) remoteMon).getMetricList(getNextItfPath(itfPath));
 		} else if (remoteMon instanceof MonitorControllerMulticast) {
-			return new ValidMetricValue(((MonitorControllerMulticast) remoteMon).getMetricList(getNextItfPath(itfPath)), true);
+			//return ((MonitorControllerMulticast) remoteMon).getMetricList(getNextItfPath(itfPath));
+			// TODO: support multicast
+			return new ArrayList<String>();
 		}
 	
 		(new NoSuchInterfaceException(nextItfName)).printStackTrace();
-		return new WrongMetricValue("Monitor cant reach interface \"" + nextItfName + "\".");
+		return new ArrayList<String>();
 	}
 
 	// BINDING CONTROLLER

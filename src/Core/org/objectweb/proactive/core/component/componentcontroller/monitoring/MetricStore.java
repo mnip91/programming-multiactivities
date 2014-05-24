@@ -87,6 +87,6 @@ public interface MetricStore {
 	//Object calculate(String name, Object[] params, String itfPath);
 	MetricValue getValue(String name, String itfPath);
 	void setValue(String name, Object v, String itfPath);
-	MetricValue getMetricList(String itfPath);
+	List<String> getMetricList(String itfPath);
 
 }

@@ -38,10 +38,10 @@ package org.objectweb.proactive.core.component.componentcontroller.monitoring.me
 
 import java.util.List;
 
-import org.objectweb.proactive.core.component.componentcontroller.monitoring.Condition;
-import org.objectweb.proactive.core.component.componentcontroller.monitoring.IncomingRequestRecord;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.event.RemmosEventType;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.Metric;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.IncomingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.Condition;
 
 /**
  * Calculates the Average Response Time of all the requests that have been served by the component.

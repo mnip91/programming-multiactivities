@@ -34,7 +34,7 @@
  * ################################################################
  * $$PROACTIVE_INITIAL_DEV$$
  */
-package org.objectweb.proactive.core.component.componentcontroller.monitoring;
+package org.objectweb.proactive.core.component.componentcontroller.monitoring.records;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,10 +67,6 @@ public class RecordStoreImpl extends AbstractPAComponentController implements Re
     /** Log for outgoing request */
     private Map<ComponentRequestID, OutgoingRequestRecord> outgoingRequestLog;
 
-	
-	public RecordStoreImpl() {
-		super();
-	}
 	
 	public void init() {
 		logger.debug("[Log Store] Initializing logs ...");
@@ -273,6 +269,4 @@ public class RecordStoreImpl extends AbstractPAComponentController implements Re
 		return null;
 	}
 
-
-	
 }

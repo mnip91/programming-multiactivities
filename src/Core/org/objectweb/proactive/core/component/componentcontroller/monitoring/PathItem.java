@@ -42,6 +42,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.ComponentRequestID;
+
 /**
  * This class represents an element in the path of a request.
  * It should, at least, include:

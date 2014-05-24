@@ -34,9 +34,8 @@
  * ################################################################
  * $$PROACTIVE_INITIAL_DEV$$
  */
-package org.objectweb.proactive.core.component.componentcontroller.monitoring;
+package org.objectweb.proactive.core.component.componentcontroller.monitoring.records;
 
-public enum RecordType {
-	OutgoingRequestRecord,
-	IncomingRequestRecord
+public interface Transformation<S,T> {
+	T execute(S target);
 }

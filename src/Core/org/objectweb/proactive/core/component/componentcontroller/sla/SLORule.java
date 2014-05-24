@@ -78,7 +78,7 @@ public class SLORule<T> implements Serializable {
 	 */
 	public AlarmLevel check() {
 		
-		metricValue = (T) monitor.runMetric(metricName);
+		metricValue = (T) monitor.calculateMetric(metricName);
 		
 		if(condition.evaluate(metricValue, threshold)) {
 			return AlarmLevel.OK;

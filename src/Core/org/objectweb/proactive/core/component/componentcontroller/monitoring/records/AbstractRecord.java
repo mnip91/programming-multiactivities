@@ -34,53 +34,41 @@
  * ################################################################
  * $$PROACTIVE_INITIAL_DEV$$
  */
-package org.objectweb.proactive.core.component.componentcontroller.monitoring;
+package org.objectweb.proactive.core.component.componentcontroller.monitoring.records;
 
 import java.io.Serializable;
 
-import org.objectweb.proactive.core.UniqueID;
 
 /** 
- * Unique identifier for a request.
- * It's based on the sequenceNumber of the request, which is based
- * on bodyID hashcode + a sequenceID, which is included in the message.
- *  
+ * Abstract class for Monitoring Records.
+ * The Log Store should handle these records.
+ * 
  * @author cruz
  *
  */
-public class ComponentRequestID implements Serializable {
+public abstract class AbstractRecord implements Serializable {
 
-	private Long reqID;
+	/** Type of the record */
+	protected RecordType recordType;
 	
-	public ComponentRequestID(long reqID) {
-		this.reqID = reqID;
+	/** ID of the new request */
+	protected ComponentRequestID requestID;
+	
+	public AbstractRecord() {
+		
 	}
 	
-	public long getComponentRequestID() {
-		return reqID.longValue();
+	public AbstractRecord(RecordType rt, ComponentRequestID requestID) {
+		this.recordType = rt;
+		this.requestID = requestID;
 	}
 	
-	public String toString() {
-		return ""+reqID.longValue();
+	public RecordType getRecordType() {
+		return recordType;
 	}
 	
-	/**
-     * Overrides equals ...
-     * @return true if and only if o is a ComponentRequestID with the same value that this ComponentRequestID
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof ComponentRequestID) {
-            return this.reqID.longValue() == ((ComponentRequestID) o).getComponentRequestID();
-        } else {
-            return false;
-        }
-    }
-    
-    @Override
-    public int hashCode() {
-        return reqID.hashCode();
-    }
-    
-
+	public ComponentRequestID getRequestID() {
+		return requestID;
+	}
+	
 }

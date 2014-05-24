@@ -67,11 +67,11 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.Eve
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MetricStore;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MetricStoreImpl;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MonitorControllerMulticast;
-import org.objectweb.proactive.core.component.componentcontroller.monitoring.RecordStore;
-import org.objectweb.proactive.core.component.componentcontroller.monitoring.RecordStoreImpl;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MonitorController;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MonitorControllerImpl;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.event.RemmosEventListener;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.RecordStore;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.RecordStoreImpl;
 import org.objectweb.proactive.core.component.componentcontroller.sla.MetricsListener;
 import org.objectweb.proactive.core.component.componentcontroller.sla.SLANotifier;
 import org.objectweb.proactive.core.component.componentcontroller.sla.SLAService;

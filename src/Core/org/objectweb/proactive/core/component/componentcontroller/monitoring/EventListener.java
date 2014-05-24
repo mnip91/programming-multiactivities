@@ -59,6 +59,11 @@ import org.objectweb.proactive.core.component.componentcontroller.AbstractPAComp
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.event.RemmosEvent;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.event.RemmosEventListener;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.event.RemmosEventType;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.ComponentRequestID;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.IncomingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.OutgoingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.RecordStore;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.RecordType;
 import org.objectweb.proactive.core.component.componentcontroller.remmos.Remmos;
 import org.objectweb.proactive.core.jmx.naming.FactoryName;
 import org.objectweb.proactive.core.jmx.notification.FutureNotificationData;

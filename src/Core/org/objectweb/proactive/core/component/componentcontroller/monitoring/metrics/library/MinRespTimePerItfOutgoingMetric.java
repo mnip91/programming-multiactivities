@@ -38,8 +38,8 @@ package org.objectweb.proactive.core.component.componentcontroller.monitoring.me
 
 import java.util.List;
 
-import org.objectweb.proactive.core.component.componentcontroller.monitoring.Condition;
-import org.objectweb.proactive.core.component.componentcontroller.monitoring.OutgoingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.Condition;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.OutgoingRequestRecord;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.event.RemmosEventType;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.Metric;
 

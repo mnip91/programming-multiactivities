@@ -34,7 +34,7 @@
  * ################################################################
  * $$PROACTIVE_INITIAL_DEV$$
  */
-package org.objectweb.proactive.core.component.componentcontroller.monitoring;
+package org.objectweb.proactive.core.component.componentcontroller.monitoring.records;
 
 import java.util.List;
 import java.util.Map;

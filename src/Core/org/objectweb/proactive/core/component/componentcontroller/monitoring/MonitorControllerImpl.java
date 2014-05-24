@@ -57,6 +57,11 @@ import org.objectweb.proactive.core.component.Utils;
 import org.objectweb.proactive.core.component.componentcontroller.AbstractPAComponentController;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.Metric;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.MetricValue;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.ComponentRequestID;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.Condition;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.IncomingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.OutgoingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.RecordStore;
 import org.objectweb.proactive.core.component.control.MethodStatistics;
 import org.objectweb.proactive.core.component.control.PAMulticastController;
 import org.objectweb.proactive.core.component.representative.PAComponentRepresentative;
@@ -90,6 +95,7 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 	private Map<String, MonitorController> internalMonitors = new HashMap<String, MonitorController>();
 	private Map<String, MonitorControllerMulticast> externalMonitorsMulticast = new HashMap<String, MonitorControllerMulticast>();
 
+	private String hostComponentName;
 	private String basicItfs[] = {
 		EventControl.ITF_NAME,
 		RecordStore.ITF_NAME,
@@ -99,82 +105,7 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 	/** Monitoring status */
 	private boolean started = false;
 
-	/** Monitoring cache */
-	private String hostComponentName;
-	private Map<String, MonitorController> monitorsCache = new HashMap<String, MonitorController>();
-	private boolean debug = false;
-
 	
-	/**
-	 * Empty Builder
-	 */
-	public MonitorControllerImpl() {
-		super();
-	}
-
-	// --------------------------------------------------------------------------
-	// Old API, kept for wrapping calls to the new one
-	@Override
-	public Map<String, MethodStatistics> getAllStatistics() {
-		return null;
-	}
-
-	@Override
-	public MethodStatistics getStatistics(String itfName, String methodName)
-			throws ProActiveRuntimeException {
-		return null;
-	}
-
-	/*
-	 * @Override public MethodStatistics getStatistics(String itfName, String
-	 * methodName, Class<?>[] parametersTypes) throws ProActiveRuntimeException
-	 * { return null; }
-	 */
-	
-	@Override
-	public Boolean isMonitoringStarted() {
-		return isGCMMonitoringStarted();
-	}
-
-	@Override
-	public void resetMonitoring() {
-		resetGCMMonitoring();
-	}
-
-	@Override
-	public void startMonitoring() {
-		startGCMMonitoring();
-	}
-
-	@Override
-	public void stopMonitoring() {
-		stopGCMMonitoring();
-	}
-
-	// -----------------------------------------------------------------------
-	// GCM Monitoring API
-	@Override
-	public Map<String, Object> getAllGCMStatistics() {
-		return null;
-	}
-
-	/*
-	 * @Override public MethodStatistics getGCMStatistics(String itfName, String
-	 * methodName, Class<?>[] parametersTypes) throws ProActiveRuntimeException
-	 * { return null; }
-	 */
-
-	@Override
-	public Boolean isGCMMonitoringStarted() {
-		return started;
-	}
-
-	@Override
-	public void resetGCMMonitoring() {
-		this.recordStore.reset();
-		this.eventControl.reset();
-	}
-
 	@Override
 	public void startGCMMonitoring() {
 		if (started) return;
@@ -200,15 +131,35 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 			}
 		}
 		for (MonitorControllerMulticast em : externalMonitorsMulticast.values())
-			em.startMonitoring();
+			em.startGCMMonitoring();
 	}
 
 	@Override
 	public void stopGCMMonitoring() {
 		started = false;
-		// TODO: stop
 	}
 
+	@Override
+	public void resetGCMMonitoring() {
+		this.recordStore.reset();
+		this.eventControl.reset();
+	}
+
+	@Override
+	public Boolean isGCMMonitoringStarted() {
+		return new Boolean(started);
+	}
+
+	@Override
+	public Object getGCMStatistics(String arg0, String arg1) {
+		return null;
+	}
+
+	@Override
+	public Map<String, Object> getAllGCMStatistics() {
+		return null;
+	}
+	
 	public List<ComponentRequestID> getListOfIncomingRequestIDs() {
 		return recordStore.getListOfRequestIDs();
 	}
@@ -516,7 +467,6 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 		for (String monitorItfName : internalMonitors.keySet()) {
 			rpLogger.debug("[" + hostComponentName + "]  Trying internal interface [" + monitorItfName + "]");
 			name = internalMonitors.get(monitorItfName).getMonitoredComponentName();
-			monitorsCache.put(name, internalMonitors.get(monitorItfName));
 			if (name.equals(destName)) {
 				rpLogger.debug("[" + hostComponentName + "]          Found!!");
 				child = internalMonitors.get(monitorItfName);
@@ -526,7 +476,6 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 		for (String monitorItfName : externalMonitors.keySet()) {
 			rpLogger.debug("[" + hostComponentName + "]  Trying external interface [" + monitorItfName + "]");
 			name = externalMonitors.get(monitorItfName).getMonitoredComponentName();
-			monitorsCache.put(name, externalMonitors.get(monitorItfName));
 			if (name.equals(destName)) {
 				rpLogger.debug("[" + hostComponentName + "]          Found!!");
 				child = externalMonitors.get(monitorItfName);
@@ -580,8 +529,6 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 							child = (MonitorController) destinationComponent.getFcInterface(Constants.MONITOR_CONTROLLER);
 						} catch (NoSuchInterfaceException e) {
 							e.printStackTrace();
-						} finally {
-							monitorsCache.put(destinationComponentName, child);
 						}
 					}
 				}
@@ -614,7 +561,7 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 		return hostComponentName;
 	}
 
-	// METRICS
+	// METRICS 
 
 	@Override
 	public void addMetric(String name, Metric<?> metric) {
@@ -627,31 +574,23 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 	}
 
 	@Override
-	public MetricValue getMetricValue(String name) {
-		return metricsStore.getValue(name);
-	}
-	
-	@Override
-	public void setMetricValue(String name, Object value) {
-		metricsStore.setValue(name, value);
+	public List<String> getMetricList(String itfPath) {
+		return metricsStore.getMetricList(itfPath);
 	}
 
 	@Override
-	public MetricValue runMetric(String name) {
+	public MetricValue calculateMetric(String name) {
 		return metricsStore.calculate(name);
 	}
 
-	//@Override
-	//public Object runMetric(String name, Object[] params) {
-	//	return metricsStore.calculate(name, params);
-	//}
-
-
-	// REMOTE METRICS 
+	@Override
+	public MetricValue calculateMetric(String name, String itfPath) {
+		return metricsStore.calculate(name, itfPath);
+	}
 
 	@Override
-	public MetricValue getMetricList(String itfPath) {
-		return metricsStore.getMetricList(itfPath);
+	public MetricValue getMetricValue(String name) {
+		return metricsStore.getValue(name);
 	}
 
 	@Override
@@ -660,19 +599,14 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 	}
 
 	@Override
-	public void setMetricValue(String name, Object value, String itfPath) {
-		metricsStore.setValue(name, value, itfPath);
+	public void setMetricValue(String name, Object value) {
+		metricsStore.setValue(name, value);
 	}
 
 	@Override
-	public MetricValue runMetric(String name, String itfPath) {
-		return metricsStore.calculate(name, itfPath);
+	public void setMetricValue(String name, Object value, String itfPath) {
+		metricsStore.setValue(name, value, itfPath);
 	}
-
-	//@Override
-	//public Object runMetric(String name, Object[] params, String itfPath) {
-	//	return metricsStore.calculate(name, params, itfPath);
-	//}
 
 	// BindingController interface
 

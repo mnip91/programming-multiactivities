@@ -44,6 +44,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.ComponentRequestID;
+
 /**
  * This class represent the path that a request follows through a series of components
  * 

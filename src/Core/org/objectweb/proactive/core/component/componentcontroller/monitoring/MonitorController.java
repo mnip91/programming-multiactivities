@@ -43,34 +43,23 @@ import java.util.Set;
 import org.objectweb.proactive.core.ProActiveRuntimeException;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.Metric;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.metrics.MetricValue;
-import org.objectweb.proactive.core.component.control.MethodStatistics;
-import org.objectweb.proactive.core.component.exceptions.NoSuchComponentException;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.ComponentRequestID;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.IncomingRequestRecord;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.records.OutgoingRequestRecord;
 
-public interface MonitorController  {
+
+public interface MonitorController {
 
 	public static final String ITF_NAME = "monitor-controller-nf";
-	
-	//-------------------------------------------------------------------------
-	// GCM Monitoring API
-	
+
 	void startGCMMonitoring();
 	void stopGCMMonitoring();
 	void resetGCMMonitoring();
 	Boolean isGCMMonitoringStarted();
+	Object getGCMStatistics(String itfName, String methodName) throws ProActiveRuntimeException;
+	//Object getGCMStatistics(String itfName, String methodName, Class<?>[] parameterTypes) throws ProActiveRuntimeException;
 	Map<String, Object> getAllGCMStatistics();
-	//MethodStatistics getGCMStatistics(String itfName, String methodName, Class<?>[] parametersTypes) throws ProActiveRuntimeException;
-	
-	//-------------------------------------------------------------------------
-	// Adaptation for the GCM Monitoring API
-	
-	void startMonitoring();
-	void stopMonitoring();
-	void resetMonitoring();
-	Boolean isMonitoringStarted();
-	public Map<String, MethodStatistics> getAllStatistics();
-	public MethodStatistics getStatistics(String itfName, String methodName) throws ProActiveRuntimeException;
-	//public MethodStatistics getStatistics(String itfName, String methodName, Class<?>[] parametersTypes) throws ProActiveRuntimeException;
-	
+
     //-------------------------------------------------------------------------
     // Extensions for the Monitoring Framework
     //
@@ -114,35 +103,80 @@ public interface MonitorController  {
     List<String> getNotificationsReceived(); 
     
     String getMonitoredComponentName();
+
+    // ---------------------------------------------------------------------------
     
+    /**
+     * Return the name of all the currently added metrics.
+     * @return List of the names of the currently added metrics.
+     */
+    public List<String> getMetricList();
+
+    /**
+     * Return the name of all the currently added metrics.
+     * @param itfPath	path to the component that is hosting of the metric. The path is build using the interfaces
+     * who connect this component with the remote component hosting the metric.<br> Examples:<br>
+     * itfPath = "/interface-name-1/interface-to-desired-component"<br>
+     * itfPath = "/"
+     * @return List of the names of the currently added metrics.
+     */
+    public List<String> getMetricList(String itfPath);
+
     /**
      * Add a metric on this monitor.
      * @param name		the name of the metric
      * @param metric	the metric
      */
-    void addMetric(String name, Metric<?> metric);
+    public void addMetric(String name, Metric<?> metric);
+
+  
+    /**
+     * Executes the calculate() method for the desired metric.
+     * @param name	the name of the metric
+     * @return MetricValue wrapper containing the output of the calculate() method.
+     */
+    public MetricValue calculateMetric(String name);
 
     /**
-     * Return the metric value of the named metric
-     * @param name	the name of the metric
-     * @return		an object if the metric was founded, null otherwise
+     * Executes the calculate() method for the desired metric.
+     * @param name		name of the metric
+     * @param itfPath	path to the metric's owner component. See more details at {@link #getMetricList(String)}
+     * @return MetricValue wrapper containing the output of the calculate() method.
      */
-    MetricValue getMetricValue(String name);   
+    public MetricValue calculateMetric(String name, String itfPath);
+ 
+
+    /**
+     * Gets the metric value of the named metric
+     * @param name	the name of the metric
+     * @return a MetricValue wrapper containing the value of the metric
+     */
+    public MetricValue getMetricValue(String name);
+    
+    /**
+     * Gets the current value of a metric.
+     * @param name 		name of the metric
+     * @param itfPath	path to the metric's owner component. See more details at {@link #getMetricList(String)}
+     * @return a MetricValue wrapper containing the value of the metric
+     */
+    public MetricValue getMetricValue(String name, String itfPath);
+
+
+    /**
+     * Set a new value for this metric
+     * @param name		name of the metric
+     * @param value		the new value of the metric
+     * @return MetricValue wrapper containing the value of the metric
+     */
     void setMetricValue(String name, Object value);
 
-    MetricValue runMetric(String name);
-    //Object runMetric(String name, Object[] params);
-    
-    List<String> getMetricList();
-	
-    // REMOTE METRICS API
+    /**
+     * Set a new value for this metric
+     * @param name		name of the metric
+     * @param value		the new value of the metric
+     * @param itfPath	path to the metric's owner component. See more details at {@link #getMetricList(String)}
+     * @return MetricValue wrapper containing the value of the metric
+     */
+    public void setMetricValue(String name, Object value, String itfPath);
 
-    MetricValue getMetricList(String itfPath);
-   
-    MetricValue getMetricValue(String name, String itfPath);
-    void setMetricValue(String name, Object value, String itfPath);
-    
-    MetricValue runMetric(String name, String itfPath);
-    // Object runMetric(String name, Object[] params, String itfPath);
-    
 }
