@@ -56,7 +56,7 @@ public class MaxRespTimeOutgoingMetric extends Metric<Long> {
 		subscribedEvents.add(RemmosEventType.OUTGOING_REQUEST_EVENT);
 	}
 	
-	public Long calculate(final Object[] params) {
+	public Long calculate() {
 
 		List<OutgoingRequestRecord> recordList = null;
 		recordList = records.getOutgoingRequestRecords(new Condition<OutgoingRequestRecord>(){

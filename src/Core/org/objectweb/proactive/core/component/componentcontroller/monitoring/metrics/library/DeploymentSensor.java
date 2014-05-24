@@ -51,7 +51,7 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.met
 
 public class DeploymentSensor extends Metric<String> {
 
-	public String calculate(final Object[] params) {
+	public String calculate() {
 
 		String response;
 		

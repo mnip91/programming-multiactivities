@@ -68,14 +68,6 @@ public interface MetricStore {
 	 */
 	MetricValue calculate(String name);
 	
-	/**
-	 * Updates the metric value using the arguments provided. Ignores the arguments stored in the metric.
-	 * @param name
-	 * @param params
-	 * @return
-	 */
-	MetricValue calculate(String name, Object[] params);
-	
 	MetricValue getValue(String name);
 	
 	void setValue(String name, Object v);
@@ -84,7 +76,6 @@ public interface MetricStore {
 	
 	// EXTERNAL METRICS API: The same, but for an external monitor indicated by "itfPath"
 	MetricValue calculate(String name, String itfPath);
-	//Object calculate(String name, Object[] params, String itfPath);
 	MetricValue getValue(String name, String itfPath);
 	void setValue(String name, Object v, String itfPath);
 	List<String> getMetricList(String itfPath);

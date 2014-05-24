@@ -52,19 +52,21 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.met
 
 public class MinRespTimePerItfIncomingMetric extends Metric<Long> {
 
-	public MinRespTimePerItfIncomingMetric() {
+	private String itfName;
+	
+	public MinRespTimePerItfIncomingMetric(String interfaceName) {
+		itfName = interfaceName;
 		subscribedEvents.add(RemmosEventType.INCOMING_REQUEST_EVENT);
 	}
 	
-	public Long calculate(final Object[] params) {
+	public Long calculate() {
 
 		List<IncomingRequestRecord> recordList = null;
 		recordList = records.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
 			// condition that returns true for every record
 			@Override
 			public boolean evaluate(IncomingRequestRecord irr) {
-				String name = (String) params[0];
-				if(irr.getInterfaceName().equals(name)) {
+				if(irr.getInterfaceName().equals(itfName)) {
 					return true;
 				}
 				return false;

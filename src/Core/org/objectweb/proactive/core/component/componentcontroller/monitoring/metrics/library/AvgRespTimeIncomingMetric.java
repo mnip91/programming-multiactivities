@@ -56,7 +56,7 @@ public class AvgRespTimeIncomingMetric extends Metric<Double> {
 		subscribedEvents.add(RemmosEventType.INCOMING_REQUEST_EVENT);
 	}
 	
-	public Double calculate(final Object[] params) {
+	public Double calculate() {
 
 		List<IncomingRequestRecord> recordList = null;
 		recordList = records.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){

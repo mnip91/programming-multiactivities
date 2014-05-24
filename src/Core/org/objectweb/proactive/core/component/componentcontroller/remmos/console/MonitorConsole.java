@@ -408,17 +408,17 @@ public class MonitorConsole {
 							if(metric != null) {
 								if(input.length > 3) {
 									String metricName = input[3];
-									String[] args;
-									if(input.length > 4) {
-										args = new String[input.length-4];
-										for(int i=0; i<args.length; i++) {
-											args[i] = input[i+4];
-										}
-									}
-									else {
-										args = null;
-									}
-									metric.setArgs(args);
+									//String[] args;
+									//if(input.length > 4) {
+									//	args = new String[input.length-4];
+									//	for(int i=0; i<args.length; i++) {
+									//		args[i] = input[i+4];
+									//	}
+									//}
+									//else {
+									//	args = null;
+									//}
+									//metric.setArgs(args);
 									((MonitorController)found.getFcInterface(Constants.MONITOR_CONTROLLER)).addMetric(metricName, metric);
 									System.out.println("Metric "+metricName+" (type: "+metricLibraryName+") added to "+ name +".");
 								}

@@ -56,7 +56,7 @@ public class MinRespTimeIncomingMetric extends Metric<Long> {
 		subscribedEvents.add(RemmosEventType.INCOMING_REQUEST_EVENT);
 	}
 	
-	public Long calculate(final Object[] params) {
+	public Long calculate() {
 
 		List<IncomingRequestRecord> recordList = null;
 		recordList = records.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){

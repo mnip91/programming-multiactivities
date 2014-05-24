@@ -88,14 +88,6 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 			return new ValidMetricValue(metric.calculate(), false);
 		return new WrongMetricValue("Metric \"" + name + "\" not found.");
 	}
-	
-	@Override
-	public MetricValue calculate(String name, Object[] params) {
-		Metric<?> metric = metrics.get(name);
-		if(metric != null)
-			return new ValidMetricValue(metric.calculate(params), false);
-		return new WrongMetricValue("Metric \"" + name + "\" not found.");
-	}
 
 	@Override
 	public void disableMetric(String name) {
@@ -150,7 +142,7 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 		//System.out.println("EVENT ON " + hostComponent.getComponentParameters().getControllerDescription().getName() + ": " + re.getType());
 		for(Metric<?> metric : metrics.values()) {
 			if(metric.isSubscribedTo(re.getType())) {
-				metric.calculate(new Object[] {re});
+				metric.calculate();
 			}
 		}
 	}

@@ -66,31 +66,17 @@ public abstract class Metric<T> implements Serializable {
 	/** The value hold by the Metric */
 	protected T value = null;
 	
-	/** The arguments provided to this metric */
-	protected Object[] args = null;
-	
 	/** Metric must be updated or not */
 	protected boolean enabled = true;
 	
 	/** Set of subscribed events */
 	protected Set<RemmosEventType> subscribedEvents = new HashSet<RemmosEventType>();
-	
-	/**
-	 * Calculates the value of the metric using the stored parameters
-	 * @return
-	 */
-	public T calculate() {
-		return calculate(args);
-	}
-	
+
 	/**
 	 * Calculates the value of the metric, using the parameters provided
-	 * @param params
 	 * @return
 	 */
-	public T calculate(final Object[] params) {
-		return null;
-	}
+	public abstract T calculate();
 
 	/**
 	 * Returns the current value of the metric, without any recalculation
@@ -106,14 +92,6 @@ public abstract class Metric<T> implements Serializable {
 	 */
 	public void setValue(T v) {
 		value = v;
-	}
-	
-	/**
-	 * Sets the arguments that this Metric instance will use
-	 * @param args
-	 */
-	public void setArgs(Object[] args) {
-		this.args = args;
 	}
 
 	/**

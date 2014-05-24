@@ -52,19 +52,21 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.met
 
 public class AvgRespTimePerItfIncomingMetric extends Metric<Double> {
 
-	public AvgRespTimePerItfIncomingMetric() {
+	private String itfName;
+
+	public AvgRespTimePerItfIncomingMetric(String interfaceName) {
+		itfName = interfaceName;
 		subscribedEvents.add(RemmosEventType.INCOMING_REQUEST_EVENT);
 	}
 	
-	public Double calculate(final Object[] params) {
+	public Double calculate() {
 
 		List<IncomingRequestRecord> recordList = null;
 		recordList = records.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
 			// condition that returns true for every record that belongs to a given interface
 			@Override
 			public boolean evaluate(IncomingRequestRecord irr) {
-				String name = (String) params[0];
-				if(irr.getInterfaceName().equals(name)) {
+				if(irr.getInterfaceName().equals(itfName)) {
 					return true;
 				}
 				return false;
