@@ -108,30 +108,32 @@ public class MonitorControllerImpl extends AbstractPAComponentController impleme
 	
 	@Override
 	public void startGCMMonitoring() {
-		if (started) return;
-		started = true;
-		logger.debug("[Monitor Control] Start ... ");
+		
+		if (started) {
+			return;
+		}
+		
 		hostComponentName = hostComponent.getComponentParameters().getControllerDescription().getName();
 		logger.debug("[Monitor Control] My Host component is " + hostComponentName + "[ID: " + hostComponent.getID() + "]");
 		// configure the event listener
-		UniqueID aoID = hostComponent.getID();
+
 		String runtimeURL = ProActiveRuntimeImpl.getProActiveRuntime().getURL();
 		logger.debug("[Monitor Control] RuntimeURL = " + runtimeURL);
-		this.eventControl.setBodyToMonitor(aoID, runtimeURL, hostComponentName);
+		this.eventControl.setBodyToMonitor(hostComponent.getID(), runtimeURL, hostComponentName);
 
 		// start the other components of the framework
 		this.eventControl.start();
 		this.recordStore.init();
 
-		for (MonitorController in : internalMonitors.values())
-			in.startGCMMonitoring();
+		for (MonitorController in : internalMonitors.values()) in.startGCMMonitoring();
+		for (MonitorControllerMulticast em : externalMonitorsMulticast.values()) em.startGCMMonitoring();
 		for (String key : externalMonitors.keySet()) {
 			if (!key.startsWith("parent")) {
 				externalMonitors.get(key).startGCMMonitoring();
 			}
 		}
-		for (MonitorControllerMulticast em : externalMonitorsMulticast.values())
-			em.startGCMMonitoring();
+
+		started = true;
 	}
 
 	@Override

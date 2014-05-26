@@ -52,14 +52,20 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.rec
 
 public class AvgRespTimeIncomingMetric extends Metric<Double> {
 
+	private static final long serialVersionUID = 1L;
+
+	private Double value;
+
+
 	public AvgRespTimeIncomingMetric() {
-		subscribedEvents.add(RemmosEventType.INCOMING_REQUEST_EVENT);
+		this.subscribeTo(RemmosEventType.INCOMING_REQUEST_EVENT);
 	}
 	
 	public Double calculate() {
 
 		List<IncomingRequestRecord> recordList = null;
-		recordList = records.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
+		recordList = recordStore.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
+			private static final long serialVersionUID = 1L;
 			// condition that returns true for every record
 			@Override
 			public boolean evaluate(IncomingRequestRecord irr) {
@@ -78,6 +84,16 @@ public class AvgRespTimeIncomingMetric extends Metric<Double> {
 		}
 		value = sum/nRecords;
 		return value;
+	}
+
+	@Override
+	public Double getValue() {
+		return this.value;
+	}
+
+	@Override
+	public void setValue(Double value) {
+		this.value = value;
 	}
 	
 }

@@ -52,17 +52,18 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.met
 
 public class AvgRespTimePerItfIncomingMetric extends Metric<Double> {
 
+	private Double value;
 	private String itfName;
 
 	public AvgRespTimePerItfIncomingMetric(String interfaceName) {
 		itfName = interfaceName;
-		subscribedEvents.add(RemmosEventType.INCOMING_REQUEST_EVENT);
+		this.subscribeTo(RemmosEventType.INCOMING_REQUEST_EVENT);
 	}
 	
 	public Double calculate() {
 
 		List<IncomingRequestRecord> recordList = null;
-		recordList = records.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
+		recordList = recordStore.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
 			// condition that returns true for every record that belongs to a given interface
 			@Override
 			public boolean evaluate(IncomingRequestRecord irr) {
@@ -84,7 +85,17 @@ public class AvgRespTimePerItfIncomingMetric extends Metric<Double> {
 		value = sum/nRecords;
 		return value;
 	}
-		
+	
+	@Override
+	public Double getValue() {
+		return this.value;
+	}
+
+	@Override
+	public void setValue(Double value) {
+		this.value = value;
+	}
+
 }
 
 

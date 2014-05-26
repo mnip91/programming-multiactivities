@@ -51,12 +51,14 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.met
 
 public class DeploymentSensor extends Metric<String> {
 
+	private String value;
+
 	public String calculate() {
 
 		String response;
 		
 		List<IncomingRequestRecord> recordList = null;
-		recordList = records.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
+		recordList = recordStore.getIncomingRequestRecords(new Condition<IncomingRequestRecord>(){
 			// condition that returns true for every record
 			@Override
 			public boolean evaluate(IncomingRequestRecord irr) {
@@ -76,7 +78,16 @@ public class DeploymentSensor extends Metric<String> {
 		//value = sum/nRecords;
 		return value.toString();
 	}
-	
+
+	@Override
+	public String getValue() {
+		return this.value;
+	}
+
+	@Override
+	public void setValue(String value) {
+		this.value = value;
+	}
 }
 
 

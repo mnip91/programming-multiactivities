@@ -55,22 +55,110 @@ public abstract class Metric<T> implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** The record source */
-	protected RecordStore records = null;
+	protected RecordStore recordStore = null;
 
 	/** The metrics source */
 	protected MetricStore metricStore = null;
 	
-	/** The listener (SLA Monitor) interested in updates of metrics */
-	//protected MetricListener metricsListener = null;
+	// The listener (SLA Monitor) interested in this metric's updates
+	private Set<MetricListener> metricListeners = new HashSet<MetricListener>();
+
+	// Indicates if metric must notify its listener or not. If the notifications are disable, the metric will
+	// ignore any listener and will not notify them on future changes.
+	private boolean notifyListeners = true;
+
+	// Set of subscribed events
+	private Set<RemmosEventType> subscribedEvents = new HashSet<RemmosEventType>();
+
+	// Indicates if metric is enable or not. A disabled metric will ignore any RemmosEvent subscription and
+	// will not upgrade its value on new events.
+	private boolean enable = true;
+
+
+	public void setRecordSource(RecordStore rs) {
+		recordStore = rs;
+	}
 	
-	/** The value hold by the Metric */
-	protected T value = null;
+	public void setMetricSource(MetricStore ms) {
+		metricStore = ms;
+	}
 	
-	/** Metric must be updated or not */
-	protected boolean enabled = true;
+
+	/**
+	 * Accepts a new metric listener to be notify after every calculation() method call.
+	 * @param listener the listener to be added
+	 */
+	public void acceptMetricListener(MetricListener listener) {
+		metricListeners.add(listener);
+	}
+
+	/**
+	 * Remove a metric listener
+	 * @param listener the listener to be removed
+	 */
+	public void removeMetricListener(MetricListener listener) {
+		metricListeners.remove(listener);
+	}
+
+	/**
+	 * Enables the notification to this metric listeners. If enabled, all the MetricListeners will
+	 * be notified when the metric recalculates its value. The default is enable.
+	 */
+	public void enableNotifications() {
+		notifyListeners = true;
+	}
+
+	/**
+	 * Disable the notification to this metric listeners. If disabled, all the MetricListeners will
+	 * be ignored, they will not be notified when the metric recalculates its value. The default is enable.
+	 */
+	public void disableNotifications() {
+		notifyListeners = false;
+	}
+
+	/**
+	 * Shows if this metric is notifying its metric listeners after a metric value  recalculation
+	 * @return
+	 */
+	public boolean isNotificationEnable() {
+		return notifyListeners;
+	}
+
+	public void subscribeTo(RemmosEventType ret) {
+		subscribedEvents.add(ret);
+	}
+
+	public void unsubscribeFrom(RemmosEventType ret) {
+		subscribedEvents.remove(ret);
+	}
+
+	public boolean isSubscribedTo(RemmosEventType ret) {
+		return subscribedEvents.contains(ret);
+	}
+
+	/**
+	 * Enables the RemmosEvent subscription. If enabled, the {@link #calculate()} method will be call after every
+	 * notification of a subscribed RemmosEvent. Enabled by default. 
+	 */
+	public void enableEventSubscription() {
+		this.enable = true;
+	}
 	
-	/** Set of subscribed events */
-	protected Set<RemmosEventType> subscribedEvents = new HashSet<RemmosEventType>();
+	/**
+	 * Disables the RemmosEvent subscription. If disables, the metric will ignore any RemmosEvent subscription and
+	 * the method {@link #calculate()} will not be called after event notifications.
+	 */
+	public void disableEventSubsctiption() {
+		this.enable = false;
+	}
+
+	/**
+	 * Shows if this metric is being recalculated after every notification of a subscribed RemmosEvent.
+	 * @return
+	 */
+	public boolean isEventSubscriptionEnable() {
+		return this.enable;
+	}
 
 	/**
 	 * Calculates the value of the metric, using the parameters provided
@@ -82,46 +170,12 @@ public abstract class Metric<T> implements Serializable {
 	 * Returns the current value of the metric, without any recalculation
 	 * @return
 	 */
-	public T getValue() {
-		return value;
-	}
+	public abstract T getValue();
 
 	/**
 	 * Sets arbitrarily the value of the metric
-	 * @param v
+	 * @param value
 	 */
-	public void setValue(T v) {
-		value = v;
-	}
-
-	/**
-	 * Enable/disable the metric. Default is enabled.
-	 */
-	public void enable() {
-		enabled = true;
-	}
-	public void disable() {
-		enabled = false;
-	}
-	
-	public void setRecordSource(RecordStore rs) {
-		records = rs;
-	}
-	
-	public void setMetricSource(MetricStore ms) {
-		metricStore = ms;
-	}
-	
-	public boolean isSubscribedTo(RemmosEventType ret) {
-		return subscribedEvents.contains(ret);
-	}
-	
-	public void subscribeTo(RemmosEventType ret) {
-		subscribedEvents.add(ret);
-	}
-	
-	public void unsubscribeFrom(RemmosEventType ret) {
-		subscribedEvents.remove(ret);
-	}
+	public abstract void setValue(T value);
 
 }

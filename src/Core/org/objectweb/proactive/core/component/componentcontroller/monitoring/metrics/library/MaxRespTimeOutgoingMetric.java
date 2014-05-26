@@ -52,14 +52,16 @@ import org.objectweb.proactive.core.component.componentcontroller.monitoring.met
 
 public class MaxRespTimeOutgoingMetric extends Metric<Long> {
 
+	private Long value;
+
 	public MaxRespTimeOutgoingMetric() {
-		subscribedEvents.add(RemmosEventType.OUTGOING_REQUEST_EVENT);
+		this.subscribeTo(RemmosEventType.OUTGOING_REQUEST_EVENT);
 	}
 	
 	public Long calculate() {
 
 		List<OutgoingRequestRecord> recordList = null;
-		recordList = records.getOutgoingRequestRecords(new Condition<OutgoingRequestRecord>(){
+		recordList = recordStore.getOutgoingRequestRecords(new Condition<OutgoingRequestRecord>(){
 			// condition that returns true for every record
 			@Override
 			public boolean evaluate(OutgoingRequestRecord orr) {
@@ -82,7 +84,17 @@ public class MaxRespTimeOutgoingMetric extends Metric<Long> {
 		value = max;
 		return value;
 	}
-	
+
+	@Override
+	public Long getValue() {
+		return this.value;
+	}
+
+	@Override
+	public void setValue(Long value) {
+		this.value = value;
+	}
+
 }
 
 

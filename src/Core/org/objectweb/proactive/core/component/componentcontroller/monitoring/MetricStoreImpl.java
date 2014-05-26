@@ -93,7 +93,7 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	public void disableMetric(String name) {
 		Metric<?> metric = metrics.get(name);
 		if(metric != null) {
-			metric.disable();
+			metric.disableEventSubsctiption();
 		}
 	}
 
@@ -101,7 +101,7 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	public void enableMetric(String name) {
 		Metric<?> metric = metrics.get(name);
 		if(metric != null) {
-			metric.enable();
+			metric.enableEventSubscription();
 		}
 	}
 
@@ -134,17 +134,6 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 		List<String> res = new ArrayList<String>(keys.size());
 		res.addAll(keys);
 		return res;
-	}
-
-	@Override
-	public void onEvent(RemmosEvent re) {
-		// check all the metrics stored. If the metric is subscribed for the event, recalculate it.
-		//System.out.println("EVENT ON " + hostComponent.getComponentParameters().getControllerDescription().getName() + ": " + re.getType());
-		for(Metric<?> metric : metrics.values()) {
-			if(metric.isSubscribedTo(re.getType())) {
-				metric.calculate();
-			}
-		}
 	}
 
 	// EXTERNAL METRICS API
@@ -259,6 +248,19 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	
 		(new NoSuchInterfaceException(nextItfName)).printStackTrace();
 		return new ArrayList<String>();
+	}
+
+	// REMMOS EVENT
+	
+	@Override
+	public void onEvent(RemmosEvent re) {
+		// check all the metrics stored. If the metric is subscribed for the event, recalculate it.
+		//System.out.println("EVENT ON " + hostComponent.getComponentParameters().getControllerDescription().getName() + ": " + re.getType());
+		for(Metric<?> metric : metrics.values()) {
+			if(metric.isEventSubscriptionEnable() && metric.isSubscribedTo(re.getType())) {
+				metric.calculate();
+			}
+		}
 	}
 
 	// BINDING CONTROLLER
