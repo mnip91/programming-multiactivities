@@ -1,14 +1,32 @@
 package org.objectweb.proactive.core.component.componentcontroller.analysis;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MonitorController;
 
-public interface Rule extends Serializable {
 
-	public boolean isSatisfied(MonitorController monitor);
+public abstract class Rule implements Serializable {
+	private static final long serialVersionUID = 1L;
 
-	public boolean shouldPrintAlarm();
-	public String getAlarm();
-	
+	private Set<String> subscribedMetrics = new HashSet<String>();
+
+	protected boolean subscribeToMetric(String metricName) {
+		return subscribedMetrics.add(metricName);
+	}
+
+	protected boolean unsubscribeFromMetric(String metricName) {
+		return subscribedMetrics.remove(metricName);
+	}
+
+	protected boolean isSubscribedToMetric(String metricName) {
+		return subscribedMetrics.contains(metricName);
+	}
+
+	public abstract boolean isSatisfied(MonitorController monitor);
+
+	public abstract boolean shouldPrintAlarm();
+	public abstract String getAlarm();
+
 }

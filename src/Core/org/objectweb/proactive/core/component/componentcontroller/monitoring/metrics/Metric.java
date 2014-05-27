@@ -59,13 +59,6 @@ public abstract class Metric<T> implements Serializable {
 
 	/** The metrics source */
 	protected MetricStore metricStore = null;
-	
-	// The listener (SLA Monitor) interested in this metric's updates
-	private Set<MetricListener> metricListeners = new HashSet<MetricListener>();
-
-	// Indicates if metric must notify its listener or not. If the notifications are disable, the metric will
-	// ignore any listener and will not notify them on future changes.
-	private boolean notifyListeners = true;
 
 	// Set of subscribed events
 	private Set<RemmosEventType> subscribedEvents = new HashSet<RemmosEventType>();
@@ -81,47 +74,6 @@ public abstract class Metric<T> implements Serializable {
 	
 	public void setMetricSource(MetricStore ms) {
 		metricStore = ms;
-	}
-	
-
-	/**
-	 * Accepts a new metric listener to be notify after every calculation() method call.
-	 * @param listener the listener to be added
-	 */
-	public void acceptMetricListener(MetricListener listener) {
-		metricListeners.add(listener);
-	}
-
-	/**
-	 * Remove a metric listener
-	 * @param listener the listener to be removed
-	 */
-	public void removeMetricListener(MetricListener listener) {
-		metricListeners.remove(listener);
-	}
-
-	/**
-	 * Enables the notification to this metric listeners. If enabled, all the MetricListeners will
-	 * be notified when the metric recalculates its value. The default is enable.
-	 */
-	public void enableNotifications() {
-		notifyListeners = true;
-	}
-
-	/**
-	 * Disable the notification to this metric listeners. If disabled, all the MetricListeners will
-	 * be ignored, they will not be notified when the metric recalculates its value. The default is enable.
-	 */
-	public void disableNotifications() {
-		notifyListeners = false;
-	}
-
-	/**
-	 * Shows if this metric is notifying its metric listeners after a metric value  recalculation
-	 * @return
-	 */
-	public boolean isNotificationEnable() {
-		return notifyListeners;
 	}
 
 	public void subscribeTo(RemmosEventType ret) {

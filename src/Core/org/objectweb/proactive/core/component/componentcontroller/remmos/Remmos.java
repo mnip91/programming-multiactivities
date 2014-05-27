@@ -64,6 +64,7 @@ import org.objectweb.proactive.core.component.componentcontroller.execution.Exec
 import org.objectweb.proactive.core.component.componentcontroller.execution.ExecutionControllerImpl;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.EventControl;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.EventListener;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.MetricEventListener;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MetricStore;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MetricStoreImpl;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MonitorControllerMulticast;
@@ -337,13 +338,13 @@ public class Remmos {
 		membrane.nfBindFc(EVENT_LISTENER_COMP+"."+RecordStore.ITF_NAME, RECORD_STORE_COMP+"."+RecordStore.ITF_NAME);
 		membrane.nfBindFc(EVENT_LISTENER_COMP+"."+RemmosEventListener.ITF_NAME, METRICS_STORE_COMP+"."+RemmosEventListener.ITF_NAME);
 		membrane.nfBindFc(METRICS_STORE_COMP+"."+RecordStore.ITF_NAME, RECORD_STORE_COMP+"."+RecordStore.ITF_NAME);
+		membrane.nfBindFc(METRICS_STORE_COMP+"."+MetricEventListener.ITF_NAME, ANALYSIS_CONTROLLER_COMP+"."+MetricEventListener.ITF_NAME);
 		membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP + "." + MonitorController.ITF_NAME, MONITOR_SERVICE_COMP + "." +  MonitorController.ITF_NAME);
 		
 		// binding between the NF Monitoring Interface of the host component, and the Monitor Component
 		membrane.nfBindFc(Constants.MONITOR_CONTROLLER, MONITOR_SERVICE_COMP+"."+MonitorController.ITF_NAME);
 		// TODO: delete
 		membrane.nfBindFc(Constants.ANALYSIS_CONTROLLER, ANALYSIS_CONTROLLER_COMP+"."+AnalysisController.ITF_NAME);
-		membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP+"."+AnalysisController.AC_CLIENT_ITF_NAME, ANALYSIS_CONTROLLER_COMP+"."+AnalysisController.ITF_NAME);
 		membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME, EXECUTION_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME);
 		membrane.nfBindFc(Constants.EXECUTION_CONTROLLER, EXECUTION_CONTROLLER_COMP+"."+ExecutionController.ITF_NAME);
 		
@@ -574,7 +575,8 @@ public class Remmos {
 			itfTypeList.add(patf.createGCMItfType(MetricStore.ITF_NAME, MetricStore.class.getName(), TypeFactory.SERVER, TypeFactory.MANDATORY, PAGCMTypeFactory.SINGLETON_CARDINALITY));
 			itfTypeList.add(patf.createGCMItfType(RemmosEventListener.ITF_NAME, RemmosEventListener.class.getName(), TypeFactory.SERVER, TypeFactory.MANDATORY, PAGCMTypeFactory.SINGLETON_CARDINALITY));
 			itfTypeList.add(patf.createGCMItfType(RecordStore.ITF_NAME, RecordStore.class.getName(), TypeFactory.CLIENT, TypeFactory.MANDATORY, PAGCMTypeFactory.SINGLETON_CARDINALITY));
-			
+			itfTypeList.add(patf.createGCMItfType(MetricEventListener.ITF_NAME, MetricEventListener.class.getName(), TypeFactory.CLIENT, TypeFactory.OPTIONAL, PAGCMTypeFactory.SINGLETON_CARDINALITY));
+
 			String itfName;
 			
 			// external client Monitoring interfaces
@@ -742,7 +744,7 @@ public class Remmos {
 		try {
 			InterfaceType[] itfTypes = new InterfaceType[] {
 					patf.createGCMItfType(AnalysisController.ITF_NAME, AnalysisController.class.getName(), TypeFactory.SERVER, TypeFactory.MANDATORY, PAGCMTypeFactory.SINGLETON_CARDINALITY),
-					patf.createGCMItfType(AnalysisController.AC_CLIENT_ITF_NAME, AnalysisController.class.getName(), TypeFactory.CLIENT, TypeFactory.MANDATORY, PAGCMTypeFactory.SINGLETON_CARDINALITY),
+					patf.createGCMItfType(MetricEventListener.ITF_NAME, MetricEventListener.class.getName(), TypeFactory.SERVER, TypeFactory.MANDATORY, PAGCMTypeFactory.SINGLETON_CARDINALITY),
 					patf.createGCMItfType(MonitorController.ITF_NAME,	MonitorController.class.getName(), TypeFactory.CLIENT, TypeFactory.MANDATORY, PAGCMTypeFactory.SINGLETON_CARDINALITY),
 					patf.createGCMItfType(ExecutionController.ITF_NAME, ExecutionController.class.getName(), TypeFactory.CLIENT, TypeFactory.OPTIONAL, PAGCMTypeFactory.SINGLETON_CARDINALITY),
 			};

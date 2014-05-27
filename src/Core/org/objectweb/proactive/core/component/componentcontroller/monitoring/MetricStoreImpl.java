@@ -72,8 +72,8 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	private Map<String, Metric<?>> metrics = new HashMap<String, Metric<?>>();
 		
 	private RecordStore records;
+	private MetricEventListener metricEventListener;
 
-	
 	@Override
 	public void addMetric(String name, Metric<?> metric) {
 		metric.setRecordSource(records);
@@ -83,9 +83,13 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 
 	@Override
 	public MetricValue calculate(String name) {
-		Metric<?> metric = metrics.get(name);
-		if(metric != null)
-			return new ValidMetricValue(metric.calculate(), false);
+		if(metrics.containsKey(name)) {
+			MetricValue mv = new ValidMetricValue(metrics.get(name).calculate(), false);
+			if (metricEventListener != null) {
+				metricEventListener.notifyMetricUpdate(name);
+			}
+			return mv;
+		}
 		return new WrongMetricValue("Metric \"" + name + "\" not found.");
 	}
 
@@ -256,9 +260,15 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	public void onEvent(RemmosEvent re) {
 		// check all the metrics stored. If the metric is subscribed for the event, recalculate it.
 		//System.out.println("EVENT ON " + hostComponent.getComponentParameters().getControllerDescription().getName() + ": " + re.getType());
-		for(Metric<?> metric : metrics.values()) {
-			if(metric.isEventSubscriptionEnable() && metric.isSubscribedTo(re.getType())) {
-				metric.calculate();
+		for(Map.Entry<String, Metric<?>> entry : metrics.entrySet()) {
+			
+			if(entry.getValue().isEventSubscriptionEnable() && entry.getValue().isSubscribedTo(re.getType())) {
+	
+				entry.getValue().calculate();
+				
+				if (metricEventListener != null) {
+					metricEventListener.notifyMetricUpdate(entry.getKey());
+				}
 			}
 		}
 	}
@@ -269,6 +279,8 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	public void bindFc(String name, Object itf) throws NoSuchInterfaceException {
 		if(name.equals(RecordStore.ITF_NAME)) {
 			records = (RecordStore) itf;
+		} else if(name.equals(MetricEventListener.ITF_NAME)) {
+			metricEventListener = (MetricEventListener) itf;
 		} else if (name.endsWith("-external-" + MonitorController.ITF_NAME)) {
 			String realName = name.substring(0, name.lastIndexOf("-external-" + MonitorController.ITF_NAME));
 			if (itf instanceof MonitorController) {
@@ -288,6 +300,7 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	public String[] listFc() {
 		ArrayList<String> list = new ArrayList<String>();
 		list.add(RecordStore.ITF_NAME);
+		list.add(MetricEventListener.ITF_NAME);
 		for (String name : externalMonitors.keySet()) list.add(name + "-external-" + MonitorController.ITF_NAME);
 		for (String name : externalMonitorsMulticast.keySet()) list.add(name + "-external-" + MonitorController.ITF_NAME);
 		for (String name : internalMonitors.keySet()) list.add(name + "-internal-" + MonitorController.ITF_NAME);
@@ -298,6 +311,8 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	public Object lookupFc(String name) throws NoSuchInterfaceException {
 		if(name.equals(RecordStore.ITF_NAME)) {
 			return records;
+		} else if(name.equals(MetricEventListener.ITF_NAME)) {
+			return metricEventListener;
 		} else if (name.endsWith("-external-" + MonitorController.ITF_NAME)) {
 			String realName = name.substring(0, name.lastIndexOf("-external-" + MonitorController.ITF_NAME));
 			if (externalMonitors.containsKey(realName)) {
@@ -315,6 +330,8 @@ public class MetricStoreImpl extends AbstractPAComponentController implements Me
 	public void unbindFc(String name) throws NoSuchInterfaceException {
 		if(name.equals(RecordStore.ITF_NAME)) {
 			records = null;
+		} else if(name.equals(MetricEventListener.ITF_NAME)) {
+			metricEventListener = null;
 		} else if (name.endsWith("-external-" + MonitorController.ITF_NAME)) {
 			String realName = name.substring(0, name.lastIndexOf("-external-" + MonitorController.ITF_NAME));
 			if (externalMonitors.containsKey(realName)) {

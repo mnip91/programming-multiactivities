@@ -2,27 +2,22 @@ package org.objectweb.proactive.core.component.componentcontroller.analysis;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.objectweb.fractal.api.NoSuchInterfaceException;
 import org.objectweb.fractal.api.control.BindingController;
 import org.objectweb.proactive.core.component.componentcontroller.AbstractPAComponentController;
 import org.objectweb.proactive.core.component.componentcontroller.execution.ExecutionController;
+import org.objectweb.proactive.core.component.componentcontroller.monitoring.MetricEventListener;
 import org.objectweb.proactive.core.component.componentcontroller.monitoring.MonitorController;
-import org.objectweb.proactive.core.component.componentcontroller.remmos.Remmos;
 
 
 public class AnalysisControllerImpl extends AbstractPAComponentController
-		implements AnalysisController, BindingController {
+		implements AnalysisController, MetricEventListener, BindingController {
 
 	private static final long serialVersionUID = 1L;
 
-	private AnalysisController mySelf;
 	private ExecutionController executionController;
 	private MonitorController monitorController;
-	
-	// delay between each rules analysis
-	private long delay = 30000;
 	
 	// rule name --> rule
 	private Map<String, Rule> rules = new HashMap<String, Rule>();
@@ -30,11 +25,6 @@ public class AnalysisControllerImpl extends AbstractPAComponentController
 	// rule name --> action name
 	private Map<String, String> actions = new HashMap<String, String>();
 
-	
-	@Override
-	public void setDelay(long time) {
-		delay = time;
-	}
 
 	@Override
 	public void addRule(String name, Rule rule, String actionName) {
@@ -54,34 +44,38 @@ public class AnalysisControllerImpl extends AbstractPAComponentController
 	}
 
 	@Override
-	public void analyze() {
-
-		try {
-			Thread.sleep(delay);
-		} catch (InterruptedException e) { e.printStackTrace(); }
-
-		for(String ruleName : rules.keySet()) {
-			Rule rule = rules.get(ruleName);
-			if(!rule.isSatisfied(monitorController)) {
-				if (rule.shouldPrintAlarm()) {
-					System.out.println(rule.getAlarm());
-				}
-				String actionName = actions.get(ruleName);
-				if (actionName != null) {
-					executionController.execute(actionName);
-				}
-			}
+	public Boolean checkRule(String ruleName) {
+		if (rules.containsKey(ruleName)) {
+			return rules.get(ruleName).isSatisfied(monitorController);
 		}
-
-		mySelf.analyze();
+		return false;
 	}
 
+	private void checkRuleAndTriggerAction(String rule) {
+		if (rules.get(rule).isSatisfied(monitorController)) {
+			return;
+		}
+		if (actions.containsKey(rule)) {
+			executionController.execute(actions.get(rule));
+		}
+	}
+
+	// METRIC EVENT LISTENER
+	
+	@Override
+	public void notifyMetricUpdate(String metricName) {
+		for (Map.Entry<String, Rule> entry : rules.entrySet()) {
+			if (entry.getValue().isSubscribedToMetric(metricName)) {
+				checkRuleAndTriggerAction(entry.getKey());
+			}
+		}
+	}
+
+	// BINDING CONTROLLER
 
 	@Override
 	public void bindFc(String name, Object itf) throws NoSuchInterfaceException {
-		if (name.equals(AnalysisController.AC_CLIENT_ITF_NAME)) {
-			mySelf = (AnalysisController) itf;
-		} else if (name.equals(ExecutionController.ITF_NAME)) {
+		if (name.equals(ExecutionController.ITF_NAME)) {
 			executionController = (ExecutionController) itf;
 		} else if (name.equals(MonitorController.ITF_NAME)) {
 			monitorController = (MonitorController) itf;
@@ -92,7 +86,7 @@ public class AnalysisControllerImpl extends AbstractPAComponentController
 
 	@Override
 	public String[] listFc() {
-		return new String[] { AC_CLIENT_ITF_NAME, MonitorController.ITF_NAME, ExecutionController.ITF_NAME };
+		return new String[] { MonitorController.ITF_NAME, ExecutionController.ITF_NAME };
 	}
 
 	@Override
@@ -101,8 +95,6 @@ public class AnalysisControllerImpl extends AbstractPAComponentController
 			return monitorController;
 		} else if (name.equals(ExecutionController.ITF_NAME)) {
 			return executionController;
-		} else if (name.equals(AC_CLIENT_ITF_NAME)) {
-			return mySelf;
 		}
 		throw new NoSuchInterfaceException("AnalysisController:" + name);
 	}
@@ -113,8 +105,6 @@ public class AnalysisControllerImpl extends AbstractPAComponentController
 			monitorController = null;
 		} else if (name.equals(ExecutionController.ITF_NAME)) {
 			executionController = null;
-		} else if (name.equals(AC_CLIENT_ITF_NAME)) {
-			mySelf = null;
 		} else {
 			throw new NoSuchInterfaceException("AnalysisController:" + name);
 		}

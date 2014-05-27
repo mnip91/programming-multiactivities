@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.objectweb.proactive.core.component.componentcontroller.AbstractPAComponentController;
@@ -71,8 +72,8 @@ public class RecordStoreImpl extends AbstractPAComponentController implements Re
 	public void init() {
 		logger.debug("[Log Store] Initializing logs ...");
 		// should some of these two HashMap's be synchronized?		
-		incomingRequestLog = new HashMap<ComponentRequestID, IncomingRequestRecord>();
-    	outgoingRequestLog = new HashMap<ComponentRequestID, OutgoingRequestRecord>();
+		incomingRequestLog = new ConcurrentHashMap<ComponentRequestID, IncomingRequestRecord>();
+    	outgoingRequestLog = new ConcurrentHashMap<ComponentRequestID, OutgoingRequestRecord>();
 	}
 
 	@Override
@@ -226,8 +227,7 @@ public class RecordStoreImpl extends AbstractPAComponentController implements Re
 	}
 
 	@Override
-	public List<OutgoingRequestRecord> getOutgoingRequestRecords(
-			Condition<OutgoingRequestRecord> condition) {
+	public List<OutgoingRequestRecord> getOutgoingRequestRecords(Condition<OutgoingRequestRecord> condition) {
 		
 		List<OutgoingRequestRecord> result = new ArrayList<OutgoingRequestRecord>();
 		// applies condition to all IncomingRequestRecords stored
