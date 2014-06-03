@@ -134,6 +134,18 @@ public class Remmos {
 			+ "config/default-component-controller-config-basic.xml";
 
 
+	private static PAGCMTypeFactory patf;
+	private static PAGenericFactory pagf;
+
+	private static void checkBootstrapping() throws InstantiationException, NoSuchInterfaceException {
+		if (patf == null || pagf == null) {
+			Component boot = Utils.getBootstrapComponent();
+			patf = (PAGCMTypeFactory) Utils.getPAGCMTypeFactory(boot);
+			pagf = (PAGenericFactory) Utils.getPAGenericFactory(boot);
+		}
+	}
+
+
 	/**
 	 * Creates the NF interfaces that will be used for the Monitoring and Management framework (implemented as components).
 	 * 
@@ -144,8 +156,6 @@ public class Remmos {
 	public static PAGCMInterfaceType[] createMonitorableNFType(PAGCMTypeFactory pagcmTf, PAGCMInterfaceType[] fItfType, String hierarchy) {
 
 		ArrayList<PAGCMInterfaceType> typeList = new ArrayList<PAGCMInterfaceType>();
-		PAGCMInterfaceType type[] = null;
-		PAGCMInterfaceType pagcmItfType = null;
 		
 		// Normally, the NF interfaces mentioned here should be those that are going to be implemented by NF components,
 		// and the rest of the NF interfaces (that are going to be implemented by object controller) should be in a ControllerDesc file.
@@ -277,10 +287,7 @@ public class Remmos {
 	 */
 	public static void addMonitoring(Component component) throws Exception {
 
-		// bootstrapping component and factories
-		Component boot = Utils.getBootstrapComponent();
-		PAGCMTypeFactory patf = (PAGCMTypeFactory) Utils.getPAGCMTypeFactory(boot);
-		PAGenericFactory pagf = (PAGenericFactory) Utils.getPAGenericFactory(boot);
+		checkBootstrapping();
 
 		logger.debug("Currently on runtime: "+ ProActiveRuntimeImpl.getProActiveRuntime().getURL() );
 		PAComponent pac = (PAComponent) component;
@@ -289,7 +296,7 @@ public class Remmos {
 		String bodyUrl = ((UniversalBodyProxy) pacr.getProxy()).getBody().getNodeURL();
 		//logger.debug("   Which is in node ["+ bodyUrl + "]");
 		Node parentNode = NodeFactory.getNode(bodyUrl);
-		ProActiveRuntime part = parentNode.getProActiveRuntime();
+		//ProActiveRuntime part = parentNode.getProActiveRuntime();
 		//logger.debug("   and in runtime ["+ part.getURL() + "]");
 
 		// creates the components used for monitoring
@@ -298,11 +305,7 @@ public class Remmos {
 		Component recordStore = createBasicRecordStore(patf, pagf, RecordStoreImpl.class.getName(), parentNode);
 		Component monitorService = createMonitorService(patf, pagf, MonitorControllerImpl.class.getName(), component, parentNode);
 		Component metricsStore = createMetricsStore(patf, pagf, MetricStoreImpl.class.getName(), component, parentNode);
-
-		// TODO: DELETE, in order to add with the addSLA/addReconfiguration 
-		Component analysis = createAnalysisController(patf, pagf, AnalysisControllerImpl.class.getName(), parentNode);
-		Component execution = createExecutionController(patf, pagf, ExecutionControllerImpl.class.getName(), parentNode);
-
+	
 		// performs the NF assembly
 		logger.debug("Changing the membrane state in order to inserting monitoring components");
 		PAMembraneController membrane = Utils.getPAMembraneController(component);
@@ -326,10 +329,6 @@ public class Remmos {
 		membrane.nfAddFcSubComponent(recordStore);
 		membrane.nfAddFcSubComponent(monitorService);
 		membrane.nfAddFcSubComponent(metricsStore);
-		
-		// TODO: delete
-		membrane.nfAddFcSubComponent(analysis);
-		membrane.nfAddFcSubComponent(execution);
 
 		// bindings between NF components
 		membrane.nfBindFc(MONITOR_SERVICE_COMP+"."+EventControl.ITF_NAME, EVENT_LISTENER_COMP+"."+EventControl.ITF_NAME);
@@ -338,16 +337,9 @@ public class Remmos {
 		membrane.nfBindFc(EVENT_LISTENER_COMP+"."+RecordStore.ITF_NAME, RECORD_STORE_COMP+"."+RecordStore.ITF_NAME);
 		membrane.nfBindFc(EVENT_LISTENER_COMP+"."+RemmosEventListener.ITF_NAME, METRICS_STORE_COMP+"."+RemmosEventListener.ITF_NAME);
 		membrane.nfBindFc(METRICS_STORE_COMP+"."+RecordStore.ITF_NAME, RECORD_STORE_COMP+"."+RecordStore.ITF_NAME);
-		membrane.nfBindFc(METRICS_STORE_COMP+"."+MetricEventListener.ITF_NAME, ANALYSIS_CONTROLLER_COMP+"."+MetricEventListener.ITF_NAME);
-		membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP + "." + MonitorController.ITF_NAME, MONITOR_SERVICE_COMP + "." +  MonitorController.ITF_NAME);
 		
 		// binding between the NF Monitoring Interface of the host component, and the Monitor Component
-		membrane.nfBindFc(Constants.MONITOR_CONTROLLER, MONITOR_SERVICE_COMP+"."+MonitorController.ITF_NAME);
-		// TODO: delete
-		membrane.nfBindFc(Constants.ANALYSIS_CONTROLLER, ANALYSIS_CONTROLLER_COMP+"."+AnalysisController.ITF_NAME);
-		membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME, EXECUTION_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME);
-		membrane.nfBindFc(Constants.EXECUTION_CONTROLLER, EXECUTION_CONTROLLER_COMP+"."+ExecutionController.ITF_NAME);
-		
+		membrane.nfBindFc(Constants.MONITOR_CONTROLLER, MONITOR_SERVICE_COMP+"."+MonitorController.ITF_NAME);		
 
 		// bindings between the Monitor Component and the external client NF monitoring interfaces
 		// one binding from MONITOR_SERVICE_COMP for each client binding (maybe optional or mandatory)
@@ -391,6 +383,7 @@ public class Remmos {
 		
 		logger.debug("   Done for component ["+pac.getComponentParameters().getName()+"] !");
 	}
+
 
 	/**
 	 * Builds the SLA monitoring components and put them in the membrane.
@@ -456,6 +449,45 @@ public class Remmos {
 		logger.debug("   Done for component ["+pac.getComponentParameters().getName()+"] !");
 	}
 	*/
+	public static void addAnalysis(Component component) throws Exception {
+		
+		checkBootstrapping();
+
+		UniversalBodyProxy ubProxy = (UniversalBodyProxy) ((PAComponentRepresentative) component).getProxy();
+		Node parentNode = NodeFactory.getNode(ubProxy.getBody().getNodeURL());
+		
+		Component analysis = createAnalysisController(patf, pagf, AnalysisControllerImpl.class.getName(), parentNode);
+		
+		PAMembraneController membrane = Utils.getPAMembraneController(component);
+		PAGCMLifeCycleController lifeCycle = Utils.getPAGCMLifeCycleController(component);
+		
+		String membraneOldState = membrane.getMembraneState(), componentOldState = lifeCycle.getFcState();
+		lifeCycle.stopFc();
+		membrane.stopMembrane();
+		
+		// Adding analysis controller
+		membrane.nfAddFcSubComponent(analysis);
+		membrane.nfBindFc(Constants.ANALYSIS_CONTROLLER, ANALYSIS_CONTROLLER_COMP+"."+AnalysisController.ITF_NAME);
+		
+		// Assumes MonitorController already added.
+		membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP + "." + MonitorController.ITF_NAME, MONITOR_SERVICE_COMP + "." +  MonitorController.ITF_NAME);
+		membrane.nfBindFc(METRICS_STORE_COMP+"."+MetricEventListener.ITF_NAME, ANALYSIS_CONTROLLER_COMP+"."+MetricEventListener.ITF_NAME);
+
+		// Bind with execution controller if it exist. NOTE: This ugly method is needed since the
+		//  "NoSuchComponentException" is thrown only on the remote thread.
+		for (Component comp : membrane.nfGetFcSubComponents()) {
+			if (GCM.getNameController(comp).getFcName().equals(EXECUTION_CONTROLLER_COMP)) {
+				membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME,
+						EXECUTION_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME);
+				
+				break;
+			}
+		}
+
+		if(membraneOldState.equals(PAMembraneController.MEMBRANE_STARTED)) membrane.startMembrane();
+		if(componentOldState.equals(PAGCMLifeCycleController.STARTED)) lifeCycle.startFc();
+
+	}
 
 	/**
 	 * Add the Reconfiguration component and put it in the membrane.
@@ -517,6 +549,41 @@ public class Remmos {
 		logger.debug("   Done for component ["+pac.getComponentParameters().getName()+"] !");
 	}
 	*/
+	public static void addExecution(Component component) throws Exception {
+		
+		checkBootstrapping();
+
+		UniversalBodyProxy ubProxy = (UniversalBodyProxy) ((PAComponentRepresentative) component).getProxy();
+		Node parentNode = NodeFactory.getNode(ubProxy.getBody().getNodeURL());
+		
+		Component execution = createExecutionController(patf, pagf, ExecutionControllerImpl.class.getName(), parentNode);
+
+		PAMembraneController membrane = Utils.getPAMembraneController(component);
+		PAGCMLifeCycleController lifeCycle = Utils.getPAGCMLifeCycleController(component);
+		
+		String membraneOldState = membrane.getMembraneState(), componentOldState = lifeCycle.getFcState();
+		lifeCycle.stopFc();
+		membrane.stopMembrane();
+
+		// Adding execution controller
+		membrane.nfAddFcSubComponent(execution);
+		membrane.nfBindFc(Constants.EXECUTION_CONTROLLER, EXECUTION_CONTROLLER_COMP+"."+ExecutionController.ITF_NAME);
+
+		// Bind with analysis controller if it exist. NOTE: This ugly method is needed since the
+		//  "NoSuchComponentException" is thrown only on the remote thread.
+		for (Component comp : membrane.nfGetFcSubComponents()) {
+			if (GCM.getNameController(comp).getFcName().equals(ANALYSIS_CONTROLLER_COMP)) {
+				membrane.nfBindFc(ANALYSIS_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME,
+						EXECUTION_CONTROLLER_COMP + "." + ExecutionController.ITF_NAME);
+				
+				break;
+			}
+		}
+
+		if(membraneOldState.equals(PAMembraneController.MEMBRANE_STARTED)) membrane.startMembrane();
+		if(componentOldState.equals(PAGCMLifeCycleController.STARTED)) lifeCycle.startFc();
+
+	}
 
 	/**
 	 * Creates the NF Event Listener component.
@@ -902,6 +969,7 @@ public class Remmos {
 					// get the Multicast Controller
 					Object[] destinationObjects = null;
 					Component[] destinationItfOwners = null;
+					Component[] currentMonitoredDestinations = new Component[] { };
 					try {
 						pamc = Utils.getPAMulticastController(pacomponent);
 						destinationObjects = pamc.lookupGCMMulticast(itfName);
@@ -909,11 +977,30 @@ public class Remmos {
 						for(int i=0; i<destinationObjects.length; i++) {
 							destinationItfOwners[i] = ((PAInterface) destinationObjects[i]).getFcItfOwner();
 						}
+						
+						// get the components that are already bound. (In case of a second call of this method)
+						destinationObjects = pamc.lookupGCMMulticast(itfName+"-external-"+Constants.MONITOR_CONTROLLER);
+						currentMonitoredDestinations = new Component[destinationObjects.length];
+						for (int i = 0; i < destinationObjects.length; i++) {
+							currentMonitoredDestinations[i] = ((PAInterface) destinationObjects[i]).getFcItfOwner();
+						}
 					} catch (NoSuchInterfaceException e) {
 						e.printStackTrace();
 					}
+					
 					// finds all the destination components bound to this client multicast interface
 					for(Component destinationItfOwner : destinationItfOwners) {
+						
+						// If the component is already bound, don't bind it again.
+						boolean alreadyBound = false;
+						for (Component boundDestination : currentMonitoredDestinations) {
+							if (destinationItfOwner.equals(boundDestination)) {
+								alreadyBound = true;
+								break;
+							}
+						}
+						if (alreadyBound) continue;
+			
 						// discard it if it is a WSComponent or something unexpected
 						if(destinationItfOwner instanceof PAComponentRepresentative) {
 							componentDest = (PAComponentRepresentative) destinationItfOwner;
