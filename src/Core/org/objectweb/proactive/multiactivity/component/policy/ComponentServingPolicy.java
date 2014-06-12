@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.proactive.core.body.request.Request;
-import org.objectweb.proactive.core.component.Constants;
 import org.objectweb.proactive.core.component.body.NFRequestFilterImpl;
 import org.objectweb.proactive.core.component.control.PAGCMLifeCycleController;
 import org.objectweb.proactive.multiactivity.compatibility.StatefulCompatibilityMap;
@@ -124,10 +123,6 @@ public class ComponentServingPolicy extends ServingPolicy {
             for (int i = 0; i < reqs.size(); i++) {
                 if (this.nfRequestFilter.acceptRequest(reqs.get(i))) {
                     // NF request
-                	/*
-                	 * Modifying policy in order to support NF and F request in parallel.
-                	 * - mibanez
-                	 * 
                     if ((compatibility.getNumberOfExecutingRequests() != 0) || (ret.size() != 0)) {
                         // Requests are already running or there is F requests before this NF request,
                         // need to wait they terminate/are served
@@ -137,25 +132,7 @@ public class ComponentServingPolicy extends ServingPolicy {
                         addRequestToRunnableRequests(reqs, i, compatibility, ret);
 
                         return ret;
-                    }*/
-
-                	if (this.getRequestComponentInterfaceName(reqs.get(i)).equals(Constants.LIFECYCLE_CONTROLLER)) {
-                		// Life Cycle can't run in parallel with other requests
-                		if (compatibility.getNumberOfExecutingRequests() != 0 || (ret.size() != 0)) {
-                			return ret; 
-                		}
-                	} else {
-                		// NF Request can't run in parallel with other NF request
-	                	for (Request req : compatibility.getExecutingRequests()) {
-	                		if (this.nfRequestFilter.acceptRequest(req)) {
-	                			return ret;
-	                		}
-	                	}
-                	}
-                	// TODO: dont stop here, continue adding more compatible F request.
-               		addRequestToRunnableRequests(reqs, i, compatibility, ret);              
-                	return ret;
-
+                    }
                 } else {
                     // F request
                     i = this.runPolicyOnRequest(i, compatibility, ret);
@@ -180,10 +157,6 @@ public class ComponentServingPolicy extends ServingPolicy {
         runnableRequests.add(queue.get(requestIndex));
         compatibility.addRunning(queue.get(requestIndex));
         queue.remove(requestIndex);
-    }
-
-    protected String getRequestComponentInterfaceName(Request request) {
-    	return request.getMethodCall().getComponentMetadata().getComponentInterfaceName();
     }
 
 }

@@ -51,14 +51,12 @@ public interface Constants {
     public final static String PRIMITIVE = "primitive";
 
     // controller names
-    public final static String ANALYSIS_CONTROLLER ="analysis-controller";
     public final static String ATTRIBUTE_CONTROLLER = "attribute-controller";
     public final static String AUTONOMIC_CONTROLLER = "autonomic-controller";
     public final static String BINDING_CONTROLLER = "binding-controller";
     public final static String COMPONENT = "component";
     public final static String CONTENT_CONTROLLER = "content-controller";
     public final static String CONTROLLER_STATE_DUPLICATION = "controller-state-duplication-controller";
-    public final static String EXECUTION_CONTROLLER = "execution-controller";
     public final static String GATHERCAST_CONTROLLER = "gathercast-controller";
     public final static String HOST_SETTER_CONTROLLER = "host-setter-controller";
     public final static String INTERCEPTOR_CONTROLLER = "interceptor-controller";
@@ -70,7 +68,6 @@ public interface Constants {
     public final static String NAME_CONTROLLER = "name-controller";
     public final static String PRIORITY_CONTROLLER = "priority-controller";
     public final static String REQUEST_QUEUE_CONTROLLER = "request-queue-controller";
-    public final static String SLA_CONTROLLER = "sla-controller";
     public final static String SUPER_CONTROLLER = "super-controller";
 
     public final static String FACTORY = "factory";
