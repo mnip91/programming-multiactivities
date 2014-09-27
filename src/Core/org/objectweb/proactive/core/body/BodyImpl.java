@@ -883,12 +883,12 @@ public abstract class BodyImpl extends AbstractBody implements java.io.Serializa
                 //    UniqueID connectorID = serverConnector.getUniqueID();
 
                 //    if (!connectorID.equals(destinationBody.getID())) {
-                        String tagNotification = createTagNotification(tags);
-
-                        mbean.sendNotification(NotificationType.requestSent, new RequestNotificationData(
-                            BodyImpl.this.bodyID, BodyImpl.this.getNodeURL(), destinationBody.getID(),
-                            destinationBody.getNodeURL(), methodCall.getName(), -1, request
-                                    .getSequenceNumber(), tagNotification));
+                String tagNotification = createTagNotification(tags);
+                RequestNotificationData data = new RequestNotificationData(BodyImpl.this.bodyID,
+                        BodyImpl.this.getNodeURL(), destinationBody.getID(), destinationBody.getNodeURL(),
+                        methodCall.getName(), -1, request.getSequenceNumber(), tagNotification);
+                mbean.sendNotification(request.getMethodCall().getReifiedMethod().getReturnType().equals(Void.TYPE) ?
+                        NotificationType.voidRequestSent : NotificationType.requestSent, data);
                 //    }
             	// }
                         //cruz: debug
