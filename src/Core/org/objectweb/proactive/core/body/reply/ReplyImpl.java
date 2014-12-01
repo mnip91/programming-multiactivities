@@ -162,45 +162,44 @@ public class ReplyImpl extends MessageImpl implements Reply, Serializable {
             }
         }
 
-      //cruz
-        boolean awaited=false;
-        if(result != null) {
-        	awaited = PAFuture.isAwaited(result.getResultObjet());
-        }
-        if(!isAC && !awaited) {
-        	// REAL REPLY SENT from Automatic Continuations are sent by the AC Thread.
-        	// That's because this Reply object has the sourceBodyID of the body that created the response,
-        	// and not the ID of the of the sender of the response.
-        	// The Automatic Continuations thread can get the ID of the sender from the owner of the FuturePool. Here I can't (or don't know how to)
-        	Body body = LocalBodyStore.getInstance().getLocalBody(this.getSourceBodyID());
-        	BodyWrapperMBean mbean = body.getMBean();
-            if(mbean != null) {
-            	String tagNotification = createTagNotification(this.getTags());
-            	// TODO correct the parameters for source and destination
-            	//      the MonitorController is not reading them for the moment
-            	RequestNotificationData requestNotificationData = new RequestNotificationData(
-            			null, null, null, null,
-            			this.methodName, -1, this.sequenceNumber,
-            			tagNotification);
-            	mbean.sendNotification(NotificationType.realReplySent, requestNotificationData);
-            	//CMlogger.debug("REAL REPLY SENT (ReplyImpl) from ["+ body.getName() +"] to ["+ destinationBody.getID() +"], sequenceNumber ["+ this.getSequenceNumber() +"] tags "+ this.getTags());
-            	//System.out.println("REAL REPLY SENT (ReplyImpl) from ["+ body.getName() +"] to ["+ destinationBody.getID() +"], sequenceNumber ["+ this.getSequenceNumber() +"] tags "+ this.getTags());
+        //cruz
+        Body body = LocalBodyStore.getInstance().getLocalBody(this.getSourceBodyID());
+        if (body != null) {
+            boolean awaited = false;
+            if (result != null) {
+                awaited = PAFuture.isAwaited(result.getResultObjet());
             }
-            else {
-            	//CMlogger.debug("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --no mbean-- from ["+ body.getName() +"] sequenceNumber ["+ this.getSequenceNumber() + "]" );    	
-            	//System.out.println("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --no mbean-- from ["+ body.getName() +"] sequenceNumber ["+ this.getSequenceNumber() );
+            if (!isAC && !awaited) {
+                // REAL REPLY SENT from Automatic Continuations are sent by the AC Thread.
+                // That's because this Reply object has the sourceBodyID of the body that created the response,
+                // and not the ID of the of the sender of the response.
+                // The Automatic Continuations thread can get the ID of the sender from the owner of the FuturePool. Here I can't (or don't know how to)
+                BodyWrapperMBean mbean = body.getMBean();
+                if (mbean != null) {
+                    String tagNotification = createTagNotification(this.getTags());
+                    // TODO correct the parameters for source and destination
+                    //      the MonitorController is not reading them for the moment
+                    RequestNotificationData requestNotificationData = new RequestNotificationData(
+                            null, null, null, null,
+                            this.methodName, -1, this.sequenceNumber,
+                            tagNotification);
+                    mbean.sendNotification(NotificationType.realReplySent, requestNotificationData);
+                    //CMlogger.debug("REAL REPLY SENT (ReplyImpl) from ["+ body.getName() +"] to ["+ destinationBody.getID() +"], sequenceNumber ["+ this.getSequenceNumber() +"] tags "+ this.getTags());
+                    //System.out.println("REAL REPLY SENT (ReplyImpl) from ["+ body.getName() +"] to ["+ destinationBody.getID() +"], sequenceNumber ["+ this.getSequenceNumber() +"] tags "+ this.getTags());
+                } else {
+                    //CMlogger.debug("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --no mbean-- from ["+ body.getName() +"] sequenceNumber ["+ this.getSequenceNumber() + "]" );
+                    //System.out.println("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --no mbean-- from ["+ body.getName() +"] sequenceNumber ["+ this.getSequenceNumber() );
+                }
+            } else {
+                if (isAC) {
+                    //CMlogger.debug("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --is AC-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() + "]");
+                    //System.out.println("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --is AC-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() );
+                }
+                if (awaited) {
+                    //CMlogger.debug("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --awaited-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() + "]");
+                    //System.out.println("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --awaited-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() );
+                }
             }
-        }
-        else {
-        	Body body=LocalBodyStore.getInstance().getLocalBody(this.getSourceBodyID());
-        	if(isAC) {
-        		//CMlogger.debug("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --is AC-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() + "]");
-        		//System.out.println("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --is AC-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() );
-        	}
-        	if(awaited) {
-        		//CMlogger.debug("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --awaited-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() + "]");
-        		//System.out.println("+++++++++> Notification REAL REPLY NOT SENT (ReplyImpl) --awaited-- from ["+ (body==null?"---":body.getName()) +"] sequenceNumber ["+ this.getSequenceNumber() );
-        	}
         }
         //--cruz
         
